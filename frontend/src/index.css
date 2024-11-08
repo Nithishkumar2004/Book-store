@@ -1,0 +1,24 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+:root {
+  --header-background: #000078; /* Header background color */
+  --header-text-color: #ffffff; /* Header text color */
+  --header-link-active: #1d4ed8; /* Active link color */
+  --header-link-hover: #bfdbfe;  /* Hover link color */
+  --header-border-color: #e0e0e0; /* Border color */
+}
+
+header {
+  background-color: var(--header-background);
+  color: var(--header-text-color);
+}
+
+a {
+  color: var(--header-text-color);
+  transition: color 0.3s;
+}
+
+a:hover {
+  background-color: var(--header-link-hover);
+}
