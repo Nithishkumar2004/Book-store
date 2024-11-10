@@ -17,18 +17,21 @@ const LoginForm = () => {
 
   // Redirect to appropriate home page if already authenticated
   if (isAuthenticated) {
-    if (userType === 'user') {
-      return <Navigate to="/home" />;
-    } else if (userType === 'seller') {
-      return <Navigate to="/seller/home" />;
-    } else if (userType === 'admin') {
-      return <Navigate to="/admin/dashboard" />;
+    switch (userType) {
+      case 'user':
+        return <Navigate to="/home" />;
+      case 'seller':
+        return <Navigate to="/seller/home" />;
+      case 'admin':
+        return <Navigate to="/admin/dashboard" />;
+      default:
+        return null;  // Fallback if userType is not defined
     }
   }
-
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
-
+  
     // Determine the login endpoint based on the user type
     let endpoint;
     switch (userType) {
@@ -42,33 +45,51 @@ const LoginForm = () => {
         endpoint = 'http://localhost:3000/admin/login';
         break;
       default:
-        endpoint = 'http://localhost:3000/user/login';
+        endpoint = 'http://localhost:3000/user/login';  // Default to user login
     }
-
+  
     try {
       const response = await axios.post(endpoint, {
         email: formData.email,
         password: formData.password,
+      }, {
+        withCredentials: true, // Ensures cookies are sent and received
       });
-      const token = response.data.token;
-      login(token, userType);
-      enqueueSnackbar('Login successful!', { variant: 'success' });
-
-      // Navigate based on user type
-      if (userType === 'user') {
-        navigate('/home');
-      } else if (userType === 'seller') {
-        navigate('/seller/home');
-      } else if (userType === 'admin') {
-        navigate('/admin/dashboard');
+  
+      // Check if the response status indicates success
+      if (response.status === 200) {
+        login(userType);  // Save the token and user type in context
+        enqueueSnackbar('Login successful!', { variant: 'success' });
+  
+        // Navigate based on user type
+        switch (userType) {
+          case 'user':
+            navigate('/home');
+            break;
+          case 'seller':
+            navigate('/seller/home');
+            break;
+          case 'admin':
+            navigate('/admin/dashboard');
+            break;
+          default:
+            navigate('/home');
+            break;
+        }
+      } else {
+        throw new Error('Unexpected response status');
       }
     } catch (error) {
-      const errorMessage = error.response ? error.response.data.message : error.message;
+      // Improved error handling
+      const errorMessage = error.response && error.response.data && error.response.data.message
+        ? error.response.data.message
+        : error.message || 'An error occurred during login';
+  
       enqueueSnackbar(`Error during login: ${errorMessage}`, { variant: 'error' });
       console.error('Error during login:', errorMessage);
     }
   };
-
+  
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData((prevState) => ({

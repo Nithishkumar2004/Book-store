@@ -40,7 +40,6 @@ const UserSignupForm = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log(formData);
 
     // Check for required fields
     if (!formData.name || !formData.email || !formData.password || !formData.confirmPassword || !formData.phone || !formData.address || !formData.pincode || !formData.gender || !formData.age) {
