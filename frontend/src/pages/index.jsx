@@ -18,11 +18,14 @@ import SystemSettings from "./admin/SystemSettings";
 import UserManagement from "./admin/UserManagement";
 import Notfound from "./public/Notfound";
 import Landingpage from "./public/Landingpage";
+import SellerProfile from "./seller/SellerProfile";
 
 
 
 
 export {
+  SellerProfile,
+  
   Home,
   CreateBooks,
   SignUp,

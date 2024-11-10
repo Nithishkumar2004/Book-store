@@ -1,9 +1,9 @@
 import React from 'react'
 import LoginForm from '../../components/LoginForm'
 
-const Login = ({ userType }) => {
+const Login = () => {
   return (
-    <LoginForm userType={userType} />
+    <LoginForm/>
   )
 }
 

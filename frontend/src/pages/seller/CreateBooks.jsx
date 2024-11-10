@@ -61,7 +61,6 @@ const CreateBookForm = () => {
     try {
       const response = await axios.post('http://localhost:3000/books/create', formData);
       alert('Book created successfully!');
-      console.log(response.data);
     } catch (error) {
       console.error('Error creating book:', error);
       alert('Failed to create book');
