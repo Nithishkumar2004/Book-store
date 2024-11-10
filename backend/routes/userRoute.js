@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 import { User } from '../models/userModel.js';
 import dotenv from 'dotenv';
 import { check, validationResult } from 'express-validator'; // For request validation
+import cookieParser from 'cookie-parser';
 
 dotenv.config(); // Load environment variables from .env
 
@@ -11,20 +12,22 @@ const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
 const JWT_EXPIRY = process.env.JWT_EXPIRY || '1h'; // Default expiry is 1 hour if not set
 
+// Middleware to use cookies
+router.use(cookieParser());
+
 // Helper function to send errors
 const sendErrorResponse = (res, status, message) => {
   res.status(status).json({ success: false, message });
 };
 
 // Register Route for User
-router.post(
-  '/register',
+router.post('/register',
   [
     // Input validation using express-validator
     check('name').notEmpty().withMessage('Name is required'),
     check('email').isEmail().withMessage('Please provide a valid email'),
     check('password').isLength({ min: 6 }).withMessage('Password must be at least 6 characters'),
-    check('phone').isNumeric().withMessage('phone number must be numeric'),
+    check('phone').isNumeric().withMessage('Phone number must be numeric'),
     check('pincode').isNumeric().withMessage('Pincode must be numeric'),
   ],
   async (req, res) => {
@@ -95,11 +98,17 @@ router.post('/login', async (req, res) => {
     // Exclude password from the user data
     const { password: _, ...userWithoutPassword } = user.toObject();
 
+     
+    res.cookie('token', token, {
+      httpOnly: false, // Ensures the cookie is not accessible via JavaScript
+      secure: process.env.NODE_ENV === 'production', // Secure cookie for production
+      maxAge: 3600000, // 1 hour
+    });
+
     res.status(200).json({
       success: true,
       message: 'Login successful',
       user: userWithoutPassword,
-      token,
     });
   } catch (error) {
     console.error('Error logging in user:', error);
@@ -110,8 +119,8 @@ router.post('/login', async (req, res) => {
 // Add this route to fetch user profile data
 router.get('/profile', async (req, res) => {
   try {
-    // Extract the token from the Authorization header
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Extract the token from the headers
+    const token = req.headers['x-auth-token'];
 
     if (!token) {
       return sendErrorResponse(res, 401, 'Access denied');
@@ -135,12 +144,11 @@ router.get('/profile', async (req, res) => {
   }
 });
 
-
 // Update Profile Route for User
 router.put('/profile', async (req, res) => {
   try {
-    // Extract the token from the Authorization header
-    const token = req.header('Authorization')?.replace('Bearer ', '');
+    // Extract the token from the headers
+    const token = req.headers['x-auth-token'];
 
     if (!token) {
       return sendErrorResponse(res, 401, 'Access denied');
@@ -185,6 +193,17 @@ router.put('/profile', async (req, res) => {
   }
 });
 
+// Logout Route for User
+router.post('/logout', (req, res) => {
+  try {
+    // Clear the JWT cookie
+    res.clearCookie('token');
+
+    res.status(200).json({ success: true, message: 'Logged out successfully' });
+  } catch (error) {
+    console.error('Error logging out:', error);
+    sendErrorResponse(res, 500, 'Server error');
+  }
+});
 
 export default router;
-

@@ -17,7 +17,11 @@ const __dirname = path.resolve();
 const app = express();
 
 // middlewares
-app.use(cors());
+
+app.use(cors({
+  origin: 'http://localhost:5173', // The URL of your frontend
+  credentials: true,               // Allow credentials (cookies, authorization headers)
+}));
 app.use(express.json());
 
 // routes
