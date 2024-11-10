@@ -1,5 +1,6 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import Cookies from 'js-cookie';  // Import js-cookie for cookie management
 
 // Create Auth Context
 const AuthContext = createContext();
@@ -11,42 +12,43 @@ export const useAuth = () => {
 
 // Auth Provider component to wrap the app and provide auth state
 export const AuthProvider = ({ children }) => {
-  const navigate = useNavigate();  // Move useNavigate inside the component
+  const navigate = useNavigate();
 
-  // Get authToken and userType from localStorage
-  const [authToken, setAuthToken] = useState(localStorage.getItem('authToken'));
-  const [userType, setUserType] = useState(localStorage.getItem('userType'));
+  // Get authToken and userType from cookies (instead of localStorage)
+  const [authToken, setAuthToken] = useState(Cookies.get('authToken') || null);
+  const [userType, setUserType] = useState(Cookies.get('userType') || null);
 
   // Check if the user is authenticated based on authToken presence
   const isAuthenticated = !!authToken;
+  
 
-  // Login function to store authToken and userType
-  const login = (token, type) => {
-    setAuthToken(token);
+  // Login function to store authToken and userType in cookies for 1 hour
+  const login = ( type) => {
     setUserType(type);
-    localStorage.setItem('authToken', token); // Persist token in localStorage
-    localStorage.setItem('userType', type); // Persist userType in localStorage
+    // Set cookies with 1-hour expiration
+    Cookies.set('userType', type, { expires: 1  });    // 1 hour
   };
 
-  // Logout function to remove authToken and userType
+  // Logout function to remove authToken and userType from cookies
   const logout = () => {
     setAuthToken(null);
     setUserType(null);
-    localStorage.removeItem('authToken'); // Remove token from localStorage
-    localStorage.removeItem('userType'); // Remove userType from localStorage
-    navigate('/'); // Navigate to home after logout
+    Cookies.remove('token');  // Remove token from cookies
+    Cookies.remove('userType');  // Remove userType from cookies
+    navigate('/');  // Navigate to home after logout
   };
 
-  useEffect(() => {
-    // Load authToken and userType from localStorage on component mount (initial load)
-    const storedToken = localStorage.getItem('authToken');
-    const storedUserType = localStorage.getItem('userType');
-    if (storedToken && storedUserType) {
-      setAuthToken(storedToken);
-      setUserType(storedUserType);
-    }
-  }, []);
-
+  
+// Optionally check for cookie on route change
+useEffect(() => {
+  const storedToken = Cookies.get('token');
+  const storedUserType = Cookies.get('userType');
+  
+  if (storedToken && storedUserType) {
+    setAuthToken(storedToken);
+    setUserType(storedUserType);
+  }
+}, [useLocation()]);  // This will run whenever the location (URL) changes
   return (
     <AuthContext.Provider value={{ authToken, userType, isAuthenticated, login, logout }}>
       {children}
