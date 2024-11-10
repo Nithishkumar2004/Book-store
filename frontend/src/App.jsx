@@ -27,7 +27,7 @@ const AuthenticatedApp = () => {
       if (userType === 'user') {
         setMenuItems([
           { name: 'Home', href: '/home' },
-          { name: 'Profile', href: '/profile' },
+          { name: 'Profile', href: 'user/profile' },
           { name: 'Cart', href: '/cart' },
           { name: 'Checkout', href: '/checkout' },
           { name: 'Feedback', href: '/feedback' },

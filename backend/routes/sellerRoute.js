@@ -121,7 +121,6 @@ router.get('/profile', async (req, res) => {
     
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    console.log(decoded);
     
     const seller = await Seller.findById(decoded.sellerId);
 

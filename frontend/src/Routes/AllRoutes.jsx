@@ -24,13 +24,13 @@ const AllRoutes = () => {
       <Route path="/book/:id" element={protectedRoute(<BookDetails />, ['user', 'seller', 'admin'])} />
       <Route path="/cart" element={protectedRoute(<Cart />, ['user'])} />
       <Route path="/checkout" element={protectedRoute(<Checkout />, ['user'])} />
-      <Route path="/profile" element={protectedRoute(<Profile />, ['user', 'seller', 'admin'])} />
+      <Route path="/user/profile" element={protectedRoute(<Profile />, ['user', 'seller', 'admin'])} />
       <Route path="/feedback" element={protectedRoute(<Feedback />, ['user', 'seller', 'admin'])} />
 
       {/* Seller Routes */}
       <Route path="/seller/home" element={protectedRoute(<Home />, ['seller', 'admin'])} />
 
-      <Route path="/seller/home" element={protectedRoute(<SellerProfile />, ['seller', 'admin'])} />
+      <Route path="/seller/profile" element={protectedRoute(<SellerProfile />, ['seller', 'admin'])} />
       
       <Route path="/books/create" element={protectedRoute(<CreateBooks />, ['seller', 'admin'])} />
       <Route path="/books/edit/:id" element={protectedRoute(<EditBook />, ['seller', 'admin'])} />

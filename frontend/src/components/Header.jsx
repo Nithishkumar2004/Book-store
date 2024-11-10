@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 const Header = ({ menuItems }) => {
   const [activeItem, setActiveItem] = useState("Home");
   const [isOpen, setIsOpen] = useState(false);
-  const { authToken, logout } = useAuth(); // Access auth token and logout function
+  const { authToken, logout,userType } = useAuth(); // Access auth token and logout function
 
   return (
     <header>
@@ -25,8 +25,8 @@ const Header = ({ menuItems }) => {
                   <FaSignOutAlt size={20} />
                   <span className="sr-only">Logout</span>
                 </button>
-                <NavLink
-                  to="/profile"
+                <NavLink 
+                  to={`/${userType}/profile`}
                   className="text-gray-500 hover:text-header-text-color transition-colors duration-300"
                 >
                   <FaUserCircle size={24} />
