@@ -3,7 +3,7 @@ import { Route, Routes } from 'react-router-dom';
 import {
   Home, CreateBooks, EditBook, SignUp, DeleteBook, Login, Cart, Checkout, Profile, 
   BookDetails, Feedback, InventoryManagement, Orders, Dashboard, UserManagement, 
-  BookManagement, SellerManagement, SystemSettings, Notfound, Landingpage,SellerProfile
+  BookManagement, SellerManagement, SystemSettings, PurchasePage,Notfound, Landingpage,SellerProfile
 } from '../pages';
 import ProtectedRoute from './ProtectedRoute';
 
@@ -26,6 +26,7 @@ const AllRoutes = () => {
       <Route path="/checkout" element={protectedRoute(<Checkout />, ['user'])} />
       <Route path="/user/profile" element={protectedRoute(<Profile />, ['user', 'seller', 'admin'])} />
       <Route path="/feedback" element={protectedRoute(<Feedback />, ['user', 'seller', 'admin'])} />
+      <Route path="/purchase/:id" element={protectedRoute(<PurchasePage />, ['user', 'seller', 'admin'])} />
 
       {/* Seller Routes */}
       <Route path="/seller/home" element={protectedRoute(<Home />, ['seller', 'admin'])} />

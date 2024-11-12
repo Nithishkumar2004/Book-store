@@ -19,12 +19,14 @@ import UserManagement from "./admin/UserManagement";
 import Notfound from "./public/Notfound";
 import Landingpage from "./public/Landingpage";
 import SellerProfile from "./seller/SellerProfile";
+import PurchasePage from "./user/PurchasePage";
 
 
 
 
 export {
   SellerProfile,
+  PurchasePage,
   
   Home,
   CreateBooks,
