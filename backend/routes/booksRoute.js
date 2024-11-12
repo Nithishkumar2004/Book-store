@@ -1,10 +1,16 @@
 import express from 'express';
 import { v2 as cloudinary } from 'cloudinary';  // Correctly import cloudinary v2
 import multer from 'multer';
+import streamifier from 'streamifier'; // Import streamifier
 import { Book } from '../models/bookModel.js';
 import { check, validationResult } from 'express-validator';
+import dotenv from 'dotenv';
+import jwt from 'jsonwebtoken';
+
+dotenv.config(); // Load environment variables from .env
 
 const router = express.Router();
+const JWT_SECRET = process.env.JWT_SECRET;
 
 // Cloudinary configuration
 cloudinary.config({
@@ -20,15 +26,27 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage: storage });
 
 // Express route for image upload
-router.post('/upload', upload.single('image'), async (req, res) => {
+router.post('/uploadimage', upload.single('image'), async (req, res) => {
   try {
-    // Upload image to Cloudinary
-    const result = await cloudinary.uploader.upload(req.file.buffer, {
-      folder: 'folder_name',  // Optional: Specify the folder name
-    });
+    // Convert the buffer into a readable stream
+    const stream = streamifier.createReadStream(req.file.buffer);
 
-    // Send the Cloudinary URL in the response
-    res.json({ imageUrl: result.secure_url });
+    // Upload image to Cloudinary using the stream
+    const result = await cloudinary.uploader.upload_stream(
+      { folder: 'books_images' },
+      (error, result) => {
+        if (error) {
+          console.error(error);
+          return res.status(500).json({ error: 'Error uploading image to Cloudinary' });
+        }
+
+        // Send the Cloudinary URL in the response
+        res.json({ imageUrl: result.secure_url });
+      }
+    );
+
+    // Pipe the stream to Cloudinary's upload stream
+    stream.pipe(result);
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Error uploading image to Cloudinary' });
@@ -40,7 +58,6 @@ router.post(
   '/create',
   [
     // Input validation
-    check('sellerId').notEmpty().withMessage('Seller ID is required'),
     check('bookName').notEmpty().withMessage('Book name is required'),
     check('bookImage').notEmpty().withMessage('Book image URL is required'),
     check('price').isFloat({ min: 0 }).withMessage('Price must be a positive number'),
@@ -59,9 +76,9 @@ router.post(
 
     try {
       const {
-        sellerId,
+        authToken,
         bookName,
-        bookImage,
+        bookImage,  // URL of the book image
         price,
         rating,
         genre,
@@ -75,9 +92,17 @@ router.post(
         edition,
       } = req.body;
 
+      // Verify authToken
+      if (!authToken) {
+        return res.status(401).json({ success: false, message: 'Authorization token is required' });
+      }
+
+      const decoded = jwt.verify(authToken, JWT_SECRET); // Decode token to get sellerId
+      const sellerId = decoded.sellerId;  // Extract sellerId from the decoded token
+
       // Create a new book instance
       const newBook = new Book({
-        sellerId,
+        sellerId, // Use the sellerId from the token
         bookName,
         bookImage,
         price,
@@ -103,5 +128,44 @@ router.post(
     }
   }
 );
+
+
+// Route to fetch a book by its ID
+router.get('/book/:id', async (req, res) => {
+  try {
+    const bookId = req.params.id;  // Extract bookId from the URL params
+    
+    // Find the book in the database by its ID
+    const book = await Book.findById(bookId);
+
+    if (!book) {
+      return res.status(404).json({ success: false, message: 'Book not found' });
+    }
+
+    res.status(200).json({ success: true, data: book });
+  } catch (error) {
+    console.error('Error fetching book:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
+
+// Route to fetch all books
+router.get('/books', async (req, res) => {
+  try {
+    // Find all books in the database
+    const books = await Book.find();
+
+    if (books.length === 0) {
+      return res.status(404).json({ success: false, message: 'No books found' });
+    }
+
+    res.status(200).json({ success: true, data: books });
+  } catch (error) {
+    console.error('Error fetching books:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
+
 
 export default router;
