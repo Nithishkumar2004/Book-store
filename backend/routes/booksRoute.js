@@ -116,6 +116,7 @@ router.post(
         isbn,
         publicationYear,
         edition,
+        inventoryCount: 0, // Set default inventory count to 0
       });
 
       // Save the book to the database
@@ -128,6 +129,41 @@ router.post(
     }
   }
 );
+
+// Route to update the inventory count of a book
+router.put('/updateinventory/:bookId', async (req, res) => {
+  try {
+    const { bookId } = req.params;
+    
+    // Convert inventoryCount from string to number
+    let { inventoryCount } = req.body;
+    inventoryCount = Number(inventoryCount);  // Convert string to number
+
+    // Validate the inventory count
+    if (!Number.isInteger(inventoryCount) || inventoryCount < 0) {
+      console.log('Invalid inventoryCount:', inventoryCount, 'Type:', typeof inventoryCount);
+      return res.status(400).json({ success: false, message: 'Inventory count must be a non-negative integer' });
+    }
+
+    // Find the book by its ID and update the inventory count
+    const book = await Book.findById(bookId);
+    if (!book) {
+      return res.status(404).json({ success: false, message: 'Book not found' });
+    }
+
+    // Log the current and updated inventory count
+    console.log('Current inventory:', book.inventoryCount);
+    console.log('Updated inventory:', inventoryCount);
+
+    book.inventoryCount = inventoryCount;
+    await book.save();
+
+    res.status(200).json({ success: true, message: 'Inventory count updated successfully', data: book });
+  } catch (error) {
+    console.error('Error updating inventory:', error);
+    res.status(500).json({ success: false, message: 'Server error' });
+  }
+});
 
 
 // Route to fetch a book by its ID
@@ -149,7 +185,6 @@ router.get('/book/:id', async (req, res) => {
   }
 });
 
-
 // Route to fetch all books
 router.get('/books', async (req, res) => {
   try {
@@ -166,6 +201,5 @@ router.get('/books', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-
 
 export default router;

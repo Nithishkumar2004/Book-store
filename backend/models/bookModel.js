@@ -65,6 +65,17 @@ const bookSchema = new mongoose.Schema({
     type: String, // Edition information (optional)
     trim: true
   },
+  inventoryCount: {
+    type: Number, // Tracks the number of books available for sale
+    required: true,
+    min: 0,
+    default: 0
+  },
+  purchasedCount: {
+    type: Number, // Tracks the number of books sold/purchased
+    default: 0,
+    min: 0
+  },
   createdAt: {
     type: Date,
     default: Date.now
