@@ -3,6 +3,7 @@ import axios from 'axios';
 import { FaLock, FaUser, FaEnvelope, FaPhone, FaEye, FaEyeSlash, FaMapMarkerAlt } from 'react-icons/fa';
 import { useSnackbar } from 'notistack';
 import { useNavigate } from 'react-router-dom';
+import Endpoint from '../Endpoint/Endpoint';
 
 const SellerSignupForm = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -63,7 +64,7 @@ const SellerSignupForm = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3000/seller/register', formData);
+      const response = await axios.post(`${Endpoint}seller/register`, formData);
       enqueueSnackbar('Seller registration completed successfully', { variant: 'success' });
       navigate("/login/seller")
       

@@ -54,7 +54,7 @@ const UserSignupForm = () => {
     }
 
     try {
-      const response = await axios.post('http://localhost:3000/user/register', formData);
+      const response = await axios.post(`${Endpoint}user/register`, formData);
       enqueueSnackbar('User registration completed successfully', { variant: 'success' });
     } catch (error) {
       if (error.response && error.response.data && error.response.data.message) {

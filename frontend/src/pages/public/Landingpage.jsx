@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import BookCard from '../../components/BookCard';
+import Endpoint from '../../Endpoint/Endpoint';
 
 const Landingpage = () => {
   // State to store books
@@ -13,7 +14,7 @@ const Landingpage = () => {
     const fetchBooks = async () => {
       try {
         // Make a GET request to the backend to fetch books
-        const response = await fetch('http://localhost:3000/books/books'); 
+        const response = await fetch(`${Endpoint}books/books`); 
         if (!response.ok) {
           throw new Error('Failed to fetch books');
         }

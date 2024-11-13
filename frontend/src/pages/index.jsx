@@ -1,6 +1,4 @@
 import CreateBooks from "./seller/CreateBooks";
-import DeleteBook from "./seller/DeleteBook";
-import EditBook from "./seller/EditBook";
 import InventoryManagement from "./seller/InventoryManagement";
 import Orders from "./seller/Orders";
 import Login from "./public/Login";
@@ -33,8 +31,6 @@ export {
   SignUp,
   Login,
   Dashboard,
-  EditBook,
-  DeleteBook,
   Profile,
   Cart,
   Checkout,

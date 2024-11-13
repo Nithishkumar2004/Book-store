@@ -1,26 +1,27 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
+import Endpoint from '../../Endpoint/Endpoint';
 
 const PurchasePage = () => {
   const { id } = useParams(); // Extracting the book ID from the URL
-  const [book, setBook] = useState(null); // State to hold the book details
+  const [book, setBook] = useState({}); // State to hold the book details
   const [loading, setLoading] = useState(true); // State for loading state
   const [error, setError] = useState(null); // State for error handling
-  console.log(id);
-  
+
+  console.log(id); // Log the ID to ensure it's being captured
 
   // Fetch book details when the component mounts or the ID changes
   useEffect(() => {
     const fetchBookDetails = async () => {
       try {
-        const response = await fetch(`http://localhost:3000/books/book/${id}`); // Adjust API URL as necessary
+        const response = await fetch(`${Endpoint}books/book/${id}`); // Adjust API URL as necessary
         if (!response.ok) {
           throw new Error('Failed to fetch book details');
         }
-        const data = await response.json();
-        console.log(data);
-        
-        setBook(data); // Store book details in state
+        const responseData = await response.json();
+        console.log('Fetched data:', responseData); // Log response to check structure
+
+        setBook(responseData.data); // Store the book details in state
         setLoading(false); // Set loading to false after data is fetched
       } catch (error) {
         setError(error.message); // Handle any errors
@@ -45,8 +46,8 @@ const PurchasePage = () => {
     return <div className="text-center text-red-500">Error: {error}</div>;
   }
 
-  // If book is not found
-  if (!book) {
+  // If book is not found or is empty
+  if (!book || Object.keys(book).length === 0) {
     return <div className="text-center text-gray-600">Book not found</div>;
   }
 
@@ -64,40 +65,39 @@ const PurchasePage = () => {
     language,
   } = book;
 
+  console.log(book); // Log the book object to confirm structure
+
   return (
     <div className="p-6">
       <h2 className="text-3xl font-bold text-center mb-6">{bookName}</h2>
-      
-      <div className="flex flex-col items-center">
+  
+      <div className="flex flex-col lg:flex-row justify-start gap-8 lg:gap-12">
         {/* Book Image */}
-        <img src={bookImage} alt={bookName} className="w-64 h-96 object-cover mb-4" />
+        <div className='w-full lg:w-1/2'>
+          <img src={bookImage} alt={bookName} className="w-full h-auto object-cover mb-4" />
+        </div>
         
         {/* Book Details */}
-        <div className="text-center">
+        <div className="w-full lg:w-1/2 text-center lg:text-left">
           <p className="text-lg font-semibold text-gray-800">Author: {authorName}</p>
           <p className="text-md text-gray-600 mt-2">Genre: {genre}</p>
           <p className="text-md text-gray-600 mt-2">Published: {publicationYear}</p>
           <p className="text-md text-gray-600 mt-2">Pages: {pages}</p>
           <p className="text-md text-gray-600 mt-2">ISBN: {isbn}</p>
           <p className="text-md text-gray-600 mt-2">Language: {language}</p>
-          <p className="text-md text-gray-600 mt-2">Price: ₹{price}</p>
-          
-          {/* Book Description */}
-          <p className="text-gray-700 mt-4">{description}</p>
-
-          {/* Purchase Button */}
-          <div className="mt-6">
-            <button
-              className="text-white bg-blue-500 hover:bg-blue-600 py-2 px-6 rounded-md"
-              onClick={() => alert(`Proceeding to purchase: ${bookName}`)} // Placeholder action
-            >
-              Purchase Book
-            </button>
-          </div>
+          <p className="text-md text-gray-700 mt-4">{description}</p>
+          <p className="text-lg font-bold text-gray-900 mt-6">Price: ${price}</p>
+          <button
+            className="text-white bg-blue-500 hover:bg-blue-600 py-2 px-6 rounded-md mt-4"
+            onClick={() => alert(`Proceeding to purchase: ${bookName}`)}
+          >
+            Purchase Book
+          </button>
         </div>
       </div>
     </div>
   );
+  
 };
 
 export default PurchasePage;

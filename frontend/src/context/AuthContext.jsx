@@ -14,7 +14,7 @@ export const useAuth = () => {
 export const AuthProvider = ({ children }) => {
   const navigate = useNavigate();
 
-  // Get authToken and userType from cookies (instead of localStorage)
+  // Get authToken and userType from cookies (instead of `${Endpoint}Storage)
   const [authToken, setAuthToken] = useState(Cookies.get('authToken') || null);
   const [userType, setUserType] = useState(Cookies.get('userType') || null);
 

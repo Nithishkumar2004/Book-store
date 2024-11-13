@@ -4,6 +4,7 @@ import { useSnackbar } from 'notistack';
 import axios from 'axios';
 import { useNavigate, Navigate, useParams } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import Endpoint from '../Endpoint/Endpoint';
 
 const LoginForm = () => {
   const { userType } = useParams();  // Extract userType from the URL parameter
@@ -36,16 +37,16 @@ const LoginForm = () => {
     let endpoint;
     switch (userType) {
       case 'user':
-        endpoint = 'http://localhost:3000/user/login';
+        endpoint = `${Endpoint}user/login`;
         break;
       case 'seller':
-        endpoint = 'http://localhost:3000/seller/login';
+        endpoint = `${Endpoint}seller/login`;
         break;
       case 'admin':
-        endpoint = 'http://localhost:3000/admin/login';
+        endpoint = `${Endpoint}admin/login`;
         break;
       default:
-        endpoint = 'http://localhost:3000/user/login';  // Default to user login
+        endpoint = `${Endpoint}user/login`;  // Default to user login
     }
   
     try {

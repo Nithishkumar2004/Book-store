@@ -4,6 +4,7 @@ import axios from 'axios';
 import { useAuth } from '../../context/AuthContext'; // Adjust path as needed
 import { useSnackbar } from 'notistack'; // For notifications
 import Loading from '../../components/loading';
+import Endpoint from '../../Endpoint/Endpoint';
 
 const SellerProfile = () => {
   const [sellerData, setSellerData] = useState({});
@@ -17,7 +18,7 @@ const SellerProfile = () => {
   useEffect(() => {
     const fetchSellerData = async () => {
       try {
-        const response = await axios.get('http://localhost:3000/seller/profile', {
+        const response = await axios.get(`${Endpoint}seller/profile`, {
           headers: {
             'X-Auth-Token': authToken, // Send token in a custom header
           },
@@ -47,7 +48,7 @@ const SellerProfile = () => {
       setLoading(true);
       setError(null);
       const response = await axios.put(
-        'http://localhost:3000/seller/profile', // The API endpoint
+        `${Endpoint}seller/profile`, // The API endpoint
         formData, // The data you're sending in the request body
         {
           headers: {

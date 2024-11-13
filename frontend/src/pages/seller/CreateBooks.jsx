@@ -5,6 +5,7 @@ import { GiWhiteBook } from 'react-icons/gi';
 import { MdOutlineImage } from 'react-icons/md';
 import { FaIndianRupeeSign } from "react-icons/fa6";
 import { useAuth } from "../../context/AuthContext";
+import Endpoint from '../../Endpoint/Endpoint';
 
 const CreateBookForm = () => {
   const { authToken } = useAuth();
@@ -43,7 +44,7 @@ const CreateBookForm = () => {
     formDataImage.append('image', file);
 
     try {
-      const response = await axios.post('http://localhost:3000/books/uploadimage', formDataImage, {
+      const response = await axios.post(`${Endpoint}books/uploadimage`, formDataImage, {
         headers: { 'Content-Type': 'multipart/form-data' },
       });
       setImageUrl(response.data.imageUrl); // Set image URL after successful upload
@@ -61,7 +62,7 @@ const CreateBookForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:3000/books/create', formData);
+      const response = await axios.post(`${Endpoint}books/create`, formData);
       alert('Book created successfully!');
     } catch (error) {
       console.error('Error creating book:', error);

@@ -4,6 +4,7 @@
   import { useAuth } from '../../context/AuthContext'; // Assuming this is where your auth context is defined
   import { useSnackbar } from 'notistack'; // Importing useSnackbar from notistack
   import Loading from '../../components/loading';
+import Endpoint from '../../Endpoint/Endpoint';
 
   const Profile = () => {
     const [userData, setUserData] = useState({});
@@ -18,7 +19,7 @@
       const fetchUserData = async () => {
 
         try {
-          const response = await axios.get('http://localhost:3000/user/profile', {
+          const response = await axios.get(`${Endpoint}user/profile`, {
             headers: {
               withCredentials: true,  // Allow sending cookies
 
@@ -51,7 +52,7 @@
         setloading(true);
         setError(null);
         const response = await axios.put(
-          'http://localhost:3000/user/profile',  // The API endpoint
+          `${Endpoint}user/profile`,  // The API endpoint
           formData,  // The data you're sending in the request body
           {
             headers: {

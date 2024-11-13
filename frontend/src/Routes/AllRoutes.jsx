@@ -1,7 +1,7 @@
 import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import {
-  Home, CreateBooks, EditBook, SignUp, DeleteBook, Login, Cart, Checkout, Profile, 
+  Home, CreateBooks, SignUp, Login, Cart, Checkout, Profile, 
   BookDetails, Feedback, InventoryManagement, Orders, Dashboard, UserManagement, 
   BookManagement, SellerManagement, SystemSettings, PurchasePage,Notfound, Landingpage,SellerProfile
 } from '../pages';
@@ -34,8 +34,6 @@ const AllRoutes = () => {
       <Route path="/seller/profile" element={protectedRoute(<SellerProfile />, ['seller', 'admin'])} />
       
       <Route path="/books/create" element={protectedRoute(<CreateBooks />, ['seller', 'admin'])} />
-      <Route path="/books/edit/:id" element={protectedRoute(<EditBook />, ['seller', 'admin'])} />
-      <Route path="/books/delete/:id" element={protectedRoute(<DeleteBook />, ['seller', 'admin'])} />
       <Route path="/inventory" element={protectedRoute(<InventoryManagement />, ['seller', 'admin'])} />
       <Route path="/orders" element={protectedRoute(<Orders />, ['seller', 'admin'])} />
 
