@@ -24,6 +24,8 @@ const Landingpage = () => {
         // Check if the data has the expected structure
         if (data && data.data) {
           setBooks(data.data); // Store the books in state
+          console.log(books);
+          
         } else {
           throw new Error('Invalid data structure');
         }

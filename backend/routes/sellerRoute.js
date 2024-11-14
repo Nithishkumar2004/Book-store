@@ -174,4 +174,24 @@ router.put('/profile', async (req, res) => {
   }
 });
 
+// Fetch all sellers
+router.get('/sellers', async (req, res) => {
+  try {
+    // Fetch all sellers (assuming there's a Seller model)
+    const sellers = await Seller.find().select('-password'); // Exclude password from the result
+
+    if (!sellers) {
+      return sendErrorResponse(res, 404, 'No sellers found');
+    }
+
+    res.status(200).json({
+      success: true,
+      sellers,
+    });
+  } catch (error) {
+    console.error('Error fetching sellers:', error);
+    sendErrorResponse(res, 500, 'Server error');
+  }
+});
+
 export default router;

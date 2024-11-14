@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from 'react';
+import Landingpage from './Landingpage';
 
 const Home = () => {
  
 
   return (
- <div>
- </div>
+    <Landingpage/>
   );
 };
 

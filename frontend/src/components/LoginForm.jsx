@@ -110,17 +110,28 @@ const LoginForm = () => {
             </label>
             <div className="flex items-center border rounded-md px-3 py-2 bg-gray-100">
               <FaEnvelope className="text-gray-400 mr-2" />
+              {(userType==='admin')?
               <input
                 id="email"
                 name="email"
-                type="email"
+                type="text"
                 required
                 placeholder="Email address"
                 value={formData.email}
                 onChange={handleChange}
                 autoComplete="username"
                 className="w-full bg-transparent outline-none"
-              />
+              />:<input
+              id="email"
+              name="email"
+              type="email"
+              required
+              placeholder="Email address"
+              value={formData.email}
+              onChange={handleChange}
+              autoComplete="username"
+              className="w-full bg-transparent outline-none"
+            />}
             </div>
           </div>
 

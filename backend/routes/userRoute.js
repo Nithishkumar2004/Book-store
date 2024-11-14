@@ -20,6 +20,29 @@ const sendErrorResponse = (res, status, message) => {
   res.status(status).json({ success: false, message });
 };
 
+
+// Fetch all users
+router.get('/users', async (req, res) => {
+  try {
+    // Fetch all users
+    const users = await User.find().select('-password'); // Exclude password from the result
+
+    if (!users) {
+      return sendErrorResponse(res, 404, 'No users found');
+    }
+
+    res.status(200).json({
+      success: true,
+      users,
+    });
+  } catch (error) {
+    console.error('Error fetching users:', error);
+    sendErrorResponse(res, 500, 'Server error');
+  }
+});
+
+
+
 // Register Route for User
 router.post('/register',
   [

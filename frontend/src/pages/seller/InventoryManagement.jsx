@@ -1,7 +1,70 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { FaBook } from 'react-icons/fa'; // Import the book icon from react-icons
+import { FaBook } from 'react-icons/fa';
 import Endpoint from '../../Endpoint/Endpoint';
+import { useAuth } from '../../context/AuthContext';
+
+const BookInventoryTable = ({ books, onUpdateInventory }) => {
+  return (
+    <div className="overflow-x-auto">
+      <table className="min-w-full divide-y divide-gray-200">
+        <thead className="bg-gray-50">
+          <tr>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Book
+            </th>
+            <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Image
+            </th>
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Current Inventory
+            </th>
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Purchased
+            </th>
+            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+              Update
+            </th>
+          </tr>
+        </thead>
+        <tbody className="bg-white divide-y divide-gray-200">
+          {books.map((book) => (
+            <tr key={book._id}>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <div className="text-sm font-medium text-gray-900">{book.bookName}</div>
+              </td>
+              <td className="px-6 py-4 whitespace-nowrap">
+                <img
+                  src={book.bookImage}
+                  alt={book.bookName}
+                  className="h-16 w-16 object-cover rounded"
+                />
+              </td>
+              <td className="px-6 py-4 text-right whitespace-nowrap">
+                <span className="text-sm font-medium text-gray-900">
+                  {book.inventoryCount}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-right whitespace-nowrap">
+                <span className="text-sm font-medium text-gray-900">
+                  {book.purchasedCount}
+                </span>
+              </td>
+              <td className="px-6 py-4 text-right whitespace-nowrap">
+                <button
+                  onClick={() => onUpdateInventory(book._id, book.inventoryCount)}
+                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+                >
+                  Update
+                </button>
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+};
 
 const InventoryManagement = () => {
   const [books, setBooks] = useState([]);
@@ -9,13 +72,21 @@ const InventoryManagement = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updatedBookId, setUpdatedBookId] = useState(null);
+  const [updatedInventory, setUpdatedInventory] = useState(null);
+  const { authToken } = useAuth();
 
   // Fetch books when the component mounts
   useEffect(() => {
     const fetchBooks = async () => {
       try {
-        const response = await axios.get(`${Endpoint}books/books`); // Update with your endpoint for fetching books
-        setBooks(response.data.data); // Assuming books are in response.data.data
+        const response = await axios.get(`${Endpoint}books/mybooks`, {
+          headers: {
+            'token': authToken,
+          },
+        });
+        setBooks(response.data.books);
         setLoading(false);
       } catch (err) {
         setError('Failed to fetch books');
@@ -24,51 +95,39 @@ const InventoryManagement = () => {
     };
 
     fetchBooks();
-  }, []);
-
-  // Handle inventory count change
-  const handleInventoryChange = (bookId, value) => {
-    if (isNaN(value) || value < 0) {
-      setError('Please enter a valid non-negative number');
-    } else {
-      setError(null); // Reset error when valid input is provided
-    }
-    setInventoryCount(prev => ({
-      ...prev,
-      [bookId]: value
-    }));
-  };
+  }, [authToken]);
 
   // Handle inventory update submission
-  const handleUpdateInventory = async (bookId) => {
+  const handleUpdateInventory = (bookId, currentInventory) => {
+    setUpdatedBookId(bookId);
+    setUpdatedInventory(currentInventory);
+    setShowUpdateModal(true);
+  };
+
+  const handleConfirmUpdate = async () => {
     try {
-      const updatedInventory = inventoryCount[bookId];
+      await axios.put(`${Endpoint}books/updateinventory/${updatedBookId}`, { inventoryCount: updatedInventory }, {
+        headers: { Authorization: `Bearer ${authToken}` },
+      });
 
-      if (updatedInventory === undefined || updatedInventory < 0) {
-        setError('Please provide a valid inventory count');
-        return;
-      }
-
-      // Send the update request to the server
-      await axios.put(`${Endpoint}books/updateinventory/${bookId}`, { inventoryCount: updatedInventory });
-
-      // Optimistically update the local state without reloading
       setBooks((prevBooks) =>
         prevBooks.map((book) =>
-          book._id === bookId ? { ...book, inventoryCount: updatedInventory } : book
+          book._id === updatedBookId ? { ...book, inventoryCount: updatedInventory } : book
         )
       );
 
-      // Clear the input field for the updated book
-      setInventoryCount((prevCount) => ({
-        ...prevCount,
-        [bookId]: ''
-      }));
-
-      alert('Inventory updated successfully');
+      setShowUpdateModal(false);
+      setUpdatedBookId(null);
+      setUpdatedInventory(null);
     } catch (err) {
       setError('Failed to update inventory');
     }
+  };
+
+  const handleCancelUpdate = () => {
+    setShowUpdateModal(false);
+    setUpdatedBookId(null);
+    setUpdatedInventory(null);
   };
 
   // Filter books based on search query
@@ -81,7 +140,11 @@ const InventoryManagement = () => {
   }
 
   if (error) {
-    return <div className="text-red-500 text-center py-4">{error}</div>;
+    return (
+      <div className="text-center py-4 text-red-500">
+        {error}
+      </div>
+    );
   }
 
   return (
@@ -89,64 +152,43 @@ const InventoryManagement = () => {
       <h1 className="text-3xl font-semibold text-center mb-6">
         <FaBook className="inline-block mr-2" /> Inventory Management
       </h1>
+      <input
+        type="text"
+        placeholder="Search books..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        className="w-full p-2 mb-4 border rounded"
+      />
 
-      {/* Search bar */}
-      <div className="mb-4 text-center">
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          className="border border-gray-300 p-2 rounded-md w-1/3"
-          placeholder="Search books by name"
-        />
-      </div>
+      <BookInventoryTable books={filteredBooks} onUpdateInventory={handleUpdateInventory} />
 
-      {filteredBooks.length === 0 ? (
-        <p className="text-center">No books available</p>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="min-w-full table-auto bg-white shadow-lg border border-gray-200 rounded-lg">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="py-2 px-4 text-left text-sm font-semibold text-gray-700">Image</th>
-                <th className="py-2 px-4 text-left text-sm font-semibold text-gray-700">Book Name</th>
-                <th className="py-2 px-4 text-left text-sm font-semibold text-gray-700">ISBN</th>
-                <th className="py-2 px-4 text-left text-sm font-semibold text-gray-700">Current Inventory</th>
-                <th className="py-2 px-4 text-left text-sm font-semibold text-gray-700">Update Inventory</th>
-                <th className="py-2 px-4 text-left text-sm font-semibold text-gray-700">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredBooks.map((book) => (
-                <tr key={book._id} className="border-t">
-                  <td className="py-2 px-4 text-sm text-gray-800">
-                    <img src={book.bookImage} alt={book.bookName} className="w-12 h-12 object-cover rounded-md" />
-                  </td>
-                  <td className="py-2 px-4 text-sm text-gray-800">{book.bookName}</td>
-                  <td className="py-2 px-4 text-sm text-gray-800">{book.isbn}</td>
-                  <td className="py-2 px-4 text-sm text-gray-800">{book.inventoryCount}</td>
-                  <td className="py-2 px-4">
-                    <input
-                      type="number"
-                      value={inventoryCount[book._id] || ''}
-                      onChange={(e) => handleInventoryChange(book._id, e.target.value)}
-                      min="0"
-                      className="border border-gray-300 p-2 rounded-md w-full"
-                      placeholder="Update inventory"
-                    />
-                  </td>
-                  <td className="py-2 px-4">
-                    <button
-                      onClick={() => handleUpdateInventory(book._id)}  // Trigger the update and clear the input
-                      className="bg-blue-500 text-white py-1 px-4 rounded-md hover:bg-blue-600 transition"
-                    >
-                      Update
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+      {/* Update Inventory Modal */}
+      {showUpdateModal && (
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 flex items-center justify-center z-50">
+          <div className="bg-white p-6 rounded shadow-lg w-96">
+            <h2 className="text-xl font-semibold mb-4">Update Inventory</h2>
+            <p className="mb-4">Enter the new inventory count for the selected book:</p>
+            <input
+              type="number"
+              className="w-full p-2 mb-4 border rounded"
+              value={updatedInventory || ''}
+              onChange={(e) => setUpdatedInventory(e.target.value)}
+            />
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={handleConfirmUpdate}
+                className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+              >
+                Confirm
+              </button>
+              <button
+                onClick={handleCancelUpdate}
+                className="bg-gray-300 text-gray-700 px-4 py-2 rounded hover:bg-gray-400"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>
