@@ -15,6 +15,11 @@ const AuthenticatedApp = () => {
   const { isAuthenticated, userType } = useAuth();  // Getting the auth status and user type
   const [menuItems, setMenuItems] = useState([]);
 
+  console.log(isAuthenticated);
+  
+
+  
+
   // Define the default menu items for all users
   const defaultMenuItems = [
     { name: 'user', href: '/login/user' },

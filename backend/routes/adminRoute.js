@@ -3,11 +3,13 @@
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 
 // Initialize environment variables
 dotenv.config();
 const router = express.Router();
 
+router.use(cookieParser());
 
 
 // Hardcoded credentials (not recommended for production)

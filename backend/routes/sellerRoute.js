@@ -92,7 +92,9 @@ router.post('/login', async (req, res) => {
 
     const { password: _, ...sellerWithoutPassword } = seller.toObject();
     
-    res.cookie('token', token, {
+    console.log(token);
+    
+    res.cookie('authToken', token, {
       httpOnly: false, 
       secure: process.env.NODE_ENV === 'production',
       maxAge: 3600000, // 1 hour

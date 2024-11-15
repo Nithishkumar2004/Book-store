@@ -31,6 +31,8 @@ const LoginForm = () => {
   }
   
   const handleSubmit = async (e) => {
+    console.log(e);
+    
     e.preventDefault();
   
     // Determine the login endpoint based on the user type
@@ -48,15 +50,17 @@ const LoginForm = () => {
       default:
         endpoint = `${Endpoint}user/login`;  // Default to user login
     }
-  
+    
     try {
+      
       const response = await axios.post(endpoint, {
         email: formData.email,
         password: formData.password,
-      }, {
-        withCredentials: true, // Ensures cookies are sent and received
-      });
-  
+      }  ,{      withCredentials: true, // Ensures cookies are sent and received
+});
+
+      console.log(response)     
+      
       // Check if the response status indicates success
       if (response.status === 200) {
         login(userType);  // Save the token and user type in context
@@ -82,6 +86,8 @@ const LoginForm = () => {
       }
     } catch (error) {
       // Improved error handling
+      console.log(error);
+      
       const errorMessage = error.response && error.response.data && error.response.data.message
         ? error.response.data.message
         : error.message || 'An error occurred during login';

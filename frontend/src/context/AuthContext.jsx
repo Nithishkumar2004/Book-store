@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setAuthToken(null);
     setUserType(null);
-    Cookies.remove('token');  // Remove token from cookies
+    Cookies.remove('authToken');  // Remove token from cookies
     Cookies.remove('userType');  // Remove userType from cookies
     navigate('/');  // Navigate to home after logout
   };
@@ -41,7 +41,7 @@ export const AuthProvider = ({ children }) => {
   
 // Optionally check for cookie on route change
 useEffect(() => {
-  const storedToken = Cookies.get('token');
+  const storedToken = Cookies.get('authToken');
   const storedUserType = Cookies.get('userType');
   
   if (storedToken && storedUserType) {
