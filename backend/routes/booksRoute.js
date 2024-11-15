@@ -141,7 +141,6 @@ router.put('/updateinventory/:bookId', async (req, res) => {
 
     // Validate the inventory count
     if (!Number.isInteger(inventoryCount) || inventoryCount < 0) {
-      console.log('Invalid inventoryCount:', inventoryCount, 'Type:', typeof inventoryCount);
       return res.status(400).json({ success: false, message: 'Inventory count must be a non-negative integer' });
     }
 
@@ -151,9 +150,6 @@ router.put('/updateinventory/:bookId', async (req, res) => {
       return res.status(404).json({ success: false, message: 'Book not found' });
     }
 
-    // Log the current and updated inventory count
-    console.log('Current inventory:', book.inventoryCount);
-    console.log('Updated inventory:', inventoryCount);
 
     book.inventoryCount = inventoryCount;
     await book.save();
@@ -206,8 +202,7 @@ router.get('/books', async (req, res) => {
 router.get('/mybooks', async (req, res) => {
   try {
     const authToken = req.headers['token'];
-    console.log(authToken);
-    
+
     // Check if the authorization token is provided
     if (!authToken) {
       return res.status(401).json({ success: false, message: 'Authorization token is required' });

@@ -15,7 +15,6 @@ const AuthenticatedApp = () => {
   const { isAuthenticated, userType } = useAuth();  // Getting the auth status and user type
   const [menuItems, setMenuItems] = useState([]);
 
-  console.log(isAuthenticated);
   
 
   

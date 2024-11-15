@@ -21,26 +21,6 @@ const sendErrorResponse = (res, status, message) => {
 };
 
 
-// Fetch all users
-router.get('/users', async (req, res) => {
-  try {
-    // Fetch all users
-    const users = await User.find().select('-password'); // Exclude password from the result
-
-    if (!users) {
-      return sendErrorResponse(res, 404, 'No users found');
-    }
-
-    res.status(200).json({
-      success: true,
-      users,
-    });
-  } catch (error) {
-    console.error('Error fetching users:', error);
-    sendErrorResponse(res, 500, 'Server error');
-  }
-});
-
 
 
 // Register Route for User
@@ -103,9 +83,7 @@ router.post('/login', async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    console.log(email);
-    console.log(password);
-    
+   
     // Check if user exists
     const user = await User.findOne({ email });
     if (!user) {
@@ -128,7 +106,7 @@ router.post('/login', async (req, res) => {
     res.cookie('authToken', token, {
       httpOnly: false, // Prevents client-side JS from accessing the token for security
       secure: process.env.NODE_ENV === 'production', // Ensures HTTPS only in production
-      maxAge: 3600000, // 1 hour
+      maxAge: JWT_EXPIRY, // 1 hour
     });
 
     res.status(200).json({

@@ -8,7 +8,6 @@ const PurchasePage = () => {
   const [loading, setLoading] = useState(true); // State for loading state
   const [error, setError] = useState(null); // State for error handling
 
-  console.log(id); // Log the ID to ensure it's being captured
 
   // Fetch book details when the component mounts or the ID changes
   useEffect(() => {
@@ -19,7 +18,6 @@ const PurchasePage = () => {
           throw new Error('Failed to fetch book details');
         }
         const responseData = await response.json();
-        console.log('Fetched data:', responseData); // Log response to check structure
 
         setBook(responseData.data); // Store the book details in state
         setLoading(false); // Set loading to false after data is fetched
@@ -65,7 +63,6 @@ const PurchasePage = () => {
     language,
   } = book;
 
-  console.log(book); // Log the book object to confirm structure
 
   return (
     <div className="p-6">

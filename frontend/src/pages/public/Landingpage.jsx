@@ -19,13 +19,10 @@ const Landingpage = () => {
           throw new Error('Failed to fetch books');
         }
         const data = await response.json();
-        console.log(data.data); // Log the parsed data for debugging
         
         // Check if the data has the expected structure
         if (data && data.data) {
-          setBooks(data.data); // Store the books in state
-          console.log(books);
-          
+          setBooks(data.data); // Store the books in state          
         } else {
           throw new Error('Invalid data structure');
         }

@@ -92,8 +92,7 @@ router.post('/login', async (req, res) => {
 
     const { password: _, ...sellerWithoutPassword } = seller.toObject();
     
-    console.log(token);
-    
+  
     res.cookie('authToken', token, {
       httpOnly: false, 
       secure: process.env.NODE_ENV === 'production',

@@ -31,7 +31,6 @@ const LoginForm = () => {
   }
   
   const handleSubmit = async (e) => {
-    console.log(e);
     
     e.preventDefault();
   
@@ -59,7 +58,6 @@ const LoginForm = () => {
       }  ,{      withCredentials: true, // Ensures cookies are sent and received
 });
 
-      console.log(response)     
       
       // Check if the response status indicates success
       if (response.status === 200) {
@@ -85,7 +83,6 @@ const LoginForm = () => {
         throw new Error('Unexpected response status');
       }
     } catch (error) {
-      // Improved error handling
       console.log(error);
       
       const errorMessage = error.response && error.response.data && error.response.data.message
@@ -93,7 +90,6 @@ const LoginForm = () => {
         : error.message || 'An error occurred during login';
   
       enqueueSnackbar(`Error during login: ${errorMessage}`, { variant: 'error' });
-      console.error('Error during login:', errorMessage);
     }
   };
   
