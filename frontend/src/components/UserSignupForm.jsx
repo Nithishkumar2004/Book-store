@@ -2,21 +2,24 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { FaLock, FaUser, FaEnvelope, FaPhone, FaEye, FaEyeSlash } from 'react-icons/fa';
 import { useSnackbar } from 'notistack';
+import Endpoint from '../Endpoint/Endpoint';
+import { useNavigate } from 'react-router-dom';
 
 const UserSignupForm = () => {
   const { enqueueSnackbar } = useSnackbar();
+  const navigate = useNavigate();
 
   const [formData, setFormData] = useState({
     name: '',
     email: '',
     password: '',
-    confirmPassword: '',  // Added confirmPassword field
+    confirmPassword: '',
     phone: '',
     address: '',
     pincode: '',
-    gender: '', // Added gender field
-    age: '',    // Added age field
-    favorites: '', // Added favorites field (optional)
+    gender: '',
+    age: '',
+    favorites: '',
   });
 
   const [passwordVisible, setPasswordVisible] = useState(false);
@@ -56,6 +59,7 @@ const UserSignupForm = () => {
     try {
       const response = await axios.post(`${Endpoint}user/register`, formData);
       enqueueSnackbar('User registration completed successfully', { variant: 'success' });
+      navigate("/login/user")
     } catch (error) {
       if (error.response && error.response.data && error.response.data.message) {
         enqueueSnackbar(error.response.data.message, { variant: 'error' });
@@ -66,8 +70,8 @@ const UserSignupForm = () => {
   };
 
   return (
-    <div className="mx-auto bg-white p-6 rounded-lg shadow-lg mt-10 max-w-xl">
-      <h2 className="text-2xl font-semibold text-center mb-4">User Registration</h2>
+    <div className="mx-auto bg-white p-6 rounded-lg shadow-lg mt-10 max-w-4xl w-full">
+      <h2 className="text-2xl font-semibold text-center mb-6">User Registration</h2>
       <form onSubmit={handleSubmit}>
         {/* Name Input */}
         <div className="mb-4">
@@ -103,9 +107,9 @@ const UserSignupForm = () => {
           </div>
         </div>
 
-        {/* phone Input */}
+        {/* Phone Input */}
         <div className="mb-4">
-          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">phone</label>
+          <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone</label>
           <div className="flex items-center">
             <FaPhone className="text-gray-500 mr-2" />
             <input
@@ -186,17 +190,26 @@ const UserSignupForm = () => {
           />
         </div>
 
-        {/* Favorites Input */}
+        {/* Favorites Dropdown */}
         <div className="mb-4">
-          <label htmlFor="favorites" className="block text-sm font-medium text-gray-700">Favorites</label>
-          <input
-            type="text"
+          <label htmlFor="favorites" className="block text-sm font-medium text-gray-700">Select your favorite books or genres</label>
+          <select
             id="favorites"
             name="favorites"
             value={formData.favorites}
             onChange={handleInputChange}
             className="border p-2 rounded-md w-full"
-          />
+          >
+            <option value="">Select an option</option>
+            <option value="fiction">Fiction</option>
+            <option value="mystery">Mystery</option>
+            <option value="science_fiction">Science Fiction</option>
+            <option value="non_fiction">Non-fiction</option>
+            <option value="fantasy">Fantasy</option>
+            <option value="romance">Romance</option>
+            <option value="history">History</option>
+            <option value="biography">Biography</option>
+          </select>
         </div>
 
         {/* Password Input */}
@@ -240,8 +253,13 @@ const UserSignupForm = () => {
         </div>
 
         {/* Submit Button */}
-        <div className="mb-4">
-          <button type="submit" className="w-full bg-blue-500 text-white p-2 rounded-md">Register</button>
+        <div className="mb-4 text-center">
+          <button
+            type="submit"
+            className="bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 w-full sm:w-auto"
+          >
+            Register
+          </button>
         </div>
       </form>
     </div>

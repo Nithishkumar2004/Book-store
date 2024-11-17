@@ -42,7 +42,7 @@ const BookInventoryTable = ({ books, onUpdateInventory }) => {
               </td>
               <td className="px-6 py-4 text-right whitespace-nowrap">
                 <span className="text-sm font-medium text-gray-900">
-                  {book.inventoryCount}
+                  {book.inventoryCount || 'Not Available'} {/* Display inventory count */}
                 </span>
               </td>
               <td className="px-6 py-4 text-right whitespace-nowrap">
@@ -76,17 +76,18 @@ const InventoryManagement = () => {
   const [updatedBookId, setUpdatedBookId] = useState(null);
   const [updatedInventory, setUpdatedInventory] = useState(null);
   const { authToken } = useAuth();
-
+  
   // Fetch books when the component mounts
   useEffect(() => {
     const fetchBooks = async () => {
       try {
         const response = await axios.get(`${Endpoint}books/mybooks`, {
           headers: {
-            'token': authToken,
+            'X-Auth-Token': authToken,
           },
-        });
+        });        
         setBooks(response.data.books);
+
         setLoading(false);
       } catch (err) {
         setError('Failed to fetch books');
@@ -100,14 +101,14 @@ const InventoryManagement = () => {
   // Handle inventory update submission
   const handleUpdateInventory = (bookId, currentInventory) => {
     setUpdatedBookId(bookId);
-    setUpdatedInventory(currentInventory);
+    setUpdatedInventory(currentInventory || '');  // Ensure the value is set correctly
     setShowUpdateModal(true);
   };
 
   const handleConfirmUpdate = async () => {
     try {
-      await axios.put(`${Endpoint}books/updateinventory/${updatedBookId}`, { inventoryCount: updatedInventory }, {
-        headers: { Authorization: `Bearer ${authToken}` },
+      await axios.put(`${Endpoint}seller/update-inventory/${updatedBookId}`, { inventoryCount: updatedInventory }, {
+        headers: { 'x-auth-token': authToken },
       });
 
       setBooks((prevBooks) =>

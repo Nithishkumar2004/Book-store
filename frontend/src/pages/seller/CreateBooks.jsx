@@ -6,8 +6,11 @@ import { MdOutlineImage } from 'react-icons/md';
 import { FaIndianRupeeSign } from "react-icons/fa6";
 import { useAuth } from "../../context/AuthContext";
 import Endpoint from '../../Endpoint/Endpoint';
+import { useSnackbar } from 'notistack';
 
 const CreateBookForm = () => {
+  const { enqueueSnackbar } = useSnackbar();
+
   const { authToken } = useAuth();
   const [formData, setFormData] = useState({
     authToken,  // Send the authToken instead of sellerId
@@ -28,6 +31,7 @@ const CreateBookForm = () => {
 
   const [imageUrl, setImageUrl] = useState(''); // To store image URL after upload
   const [loading, setLoading] = useState(false);
+  const [imagePreview, setImagePreview] = useState(''); // To store image preview URL
 
   // Handle input changes
   const handleChange = (e) => {
@@ -36,12 +40,22 @@ const CreateBookForm = () => {
   };
 
   // Handle image upload
-  const handleImageUpload = async (e) => {
+  const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    setLoading(true);
+    // Set the preview of the image
+    setImagePreview(URL.createObjectURL(file));
+    // Store the file object in state
+    setFormData({ ...formData, bookImage: file });
+  };
+
+  // Handle actual image upload
+  const handleImageUpload = async () => {
+    if (!formData.bookImage) return '';  // No image to upload
+
     const formDataImage = new FormData();
-    formDataImage.append('image', file);
+    formDataImage.append('image', formData.bookImage);
+    setLoading(true);
 
     try {
       const response = await axios.post(`${Endpoint}books/uploadimage`, formDataImage, {
@@ -49,10 +63,13 @@ const CreateBookForm = () => {
       });
       setImageUrl(response.data.imageUrl); // Set image URL after successful upload
       setFormData({ ...formData, bookImage: response.data.imageUrl }); // Store the image URL in formData
-      alert('Image uploaded successfully!');
+      enqueueSnackbar('Image uploaded successfully!', { variant: 'success' });
+
+      return response.data.imageUrl; // Return image URL for later use
     } catch (error) {
       console.error('Error uploading image:', error);
-      alert('Failed to upload image');
+      enqueueSnackbar('Failed to upload image', { variant: 'error' });
+      return ''; // Return empty if upload failed
     } finally {
       setLoading(false);
     }
@@ -61,12 +78,24 @@ const CreateBookForm = () => {
   // Handle form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
-    try {
-      const response = await axios.post(`${Endpoint}books/create`, formData);
-      alert('Book created successfully!');
-    } catch (error) {
-      console.error('Error creating book:', error);
-      alert('Failed to create book');
+    let imageUrl = formData.bookImage;
+
+    // If image is not uploaded yet, trigger the image upload
+    if (formData.bookImage instanceof File) {
+      imageUrl = await handleImageUpload();
+    }
+
+    // Only proceed if the image upload is successful
+    if (imageUrl) {
+      const updatedFormData = { ...formData, bookImage: imageUrl };
+
+      try {
+        const response = await axios.post(`${Endpoint}books/create`, updatedFormData);
+        enqueueSnackbar('Book created successfully!', { variant: 'success' });
+      } catch (error) {
+        console.error('Error creating book:', error);
+        enqueueSnackbar('Failed to create book', { variant: 'error' });
+      }
     }
   };
 
@@ -94,10 +123,14 @@ const CreateBookForm = () => {
       <input
         type="file"
         accept="image/*"
-        onChange={handleImageUpload}
+        onChange={handleImageChange}
         className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
       />
-      {loading && <p>Uploading image...</p>}
+      {imagePreview && (
+        <div className="mt-2">
+          <img src={imagePreview} alt="Image Preview" className="w-32 h-32 object-cover border rounded-md" />
+        </div>
+      )}
 
       {/* Price */}
       <div className="flex items-center space-x-2">
@@ -134,14 +167,24 @@ const CreateBookForm = () => {
         <FaFileAlt />
         <label className="block font-medium">Genre:</label>
       </div>
-      <input
-        type="text"
+      <select
         name="genre"
         value={formData.genre}
         onChange={handleChange}
         required
         className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      />
+      >
+        <option value="">Select Genre</option>
+        <option value="Fiction">Fiction</option>
+        <option value="Non-Fiction">Non-Fiction</option>
+        <option value="Mystery">Mystery</option>
+        <option value="Fantasy">Fantasy</option>
+        <option value="Science Fiction">Science Fiction</option>
+        <option value="Romance">Romance</option>
+        <option value="Biography">Biography</option>
+        <option value="Self-Help">Self-Help</option>
+        <option value="History">History</option>
+      </select>
 
       {/* Pages */}
       <div className="flex items-center space-x-2">
@@ -163,14 +206,20 @@ const CreateBookForm = () => {
         <FaGlobe />
         <label className="block font-medium">Language:</label>
       </div>
-      <input
-        type="text"
+      <select
         name="language"
         value={formData.language}
         onChange={handleChange}
         required
         className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
-      />
+      >
+        <option value="">Select Language</option>
+        <option value="English">English</option>
+        <option value="Hindi">Hindi</option>
+        <option value="Tamil">Tamil</option>
+        <option value="Spanish">Spanish</option>
+        <option value="French">French</option>
+      </select>
 
       {/* Description */}
       <div className="flex items-center space-x-2">
@@ -222,6 +271,7 @@ const CreateBookForm = () => {
         name="isbn"
         value={formData.isbn}
         onChange={handleChange}
+        required
         className="w-full p-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
       />
 
@@ -257,7 +307,7 @@ const CreateBookForm = () => {
       {/* Submit Button */}
       <button
         type="submit"
-        className="w-full bg-indigo-500 text-white p-2 rounded-md hover:bg-indigo-700"
+        className="w-full py-2 bg-blue-500 text-white font-bold rounded-md hover:bg-blue-600"
       >
         Create Book
       </button>

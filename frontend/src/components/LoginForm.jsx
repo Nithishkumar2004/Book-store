@@ -83,7 +83,6 @@ const LoginForm = () => {
         throw new Error('Unexpected response status');
       }
     } catch (error) {
-      console.log(error);
       
       const errorMessage = error.response && error.response.data && error.response.data.message
         ? error.response.data.message

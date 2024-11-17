@@ -25,13 +25,13 @@ const Header = ({ menuItems }) => {
                   <FaSignOutAlt size={20} />
                   <span className="sr-only">Logout</span>
                 </button>
-                <NavLink 
+             {userType!=='admin'?   <NavLink 
                   to={`/${userType}/profile`}
                   className="text-gray-500 hover:text-header-text-color transition-colors duration-300"
                 >
                   <FaUserCircle size={24} />
                   <span className="sr-only">Profile</span>
-                </NavLink>
+                </NavLink>:null}
               </div>
             ) }
             <button

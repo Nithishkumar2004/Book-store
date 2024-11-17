@@ -15,6 +15,7 @@ const Landingpage = () => {
       try {
         // Make a GET request to the backend to fetch books
         const response = await fetch(`${Endpoint}books/books`); 
+        
         if (!response.ok) {
           throw new Error('Failed to fetch books');
         }

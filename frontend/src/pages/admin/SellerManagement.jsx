@@ -3,14 +3,12 @@ import axios from 'axios';
 import Endpoint from '../../Endpoint/Endpoint';
 
 const SellerManagement = () => {
-  // State to store seller data, loading, error, search term, and pagination info
+  // State to store seller data, loading, error, and search term
   const [sellers, setSellers] = useState([]);
   const [filteredSellers, setFilteredSellers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
 
   // Fetch sellers data on component mount
   useEffect(() => {
@@ -42,15 +40,7 @@ const SellerManagement = () => {
         seller.companyName.toLowerCase().includes(value)
     );
     setFilteredSellers(filtered);
-    setCurrentPage(1); // Reset to the first page after filtering
   };
-
-  // Handle pagination
-  const indexOfLastSeller = currentPage * itemsPerPage;
-  const indexOfFirstSeller = indexOfLastSeller - itemsPerPage;
-  const currentSellers = filteredSellers.slice(indexOfFirstSeller, indexOfLastSeller);
-
-  const paginate = (pageNumber) => setCurrentPage(pageNumber);
 
   if (loading) {
     return <div>Loading...</div>;
@@ -89,8 +79,8 @@ const SellerManagement = () => {
             </tr>
           </thead>
           <tbody>
-            {currentSellers.length > 0 ? (
-              currentSellers.map((seller) => (
+            {filteredSellers.length > 0 ? (
+              filteredSellers.map((seller) => (
                 <tr key={seller._id} className="border-t hover:bg-gray-50">
                   <td className="px-4 py-2 border text-gray-800">{seller.name}</td>
                   <td className="px-4 py-2 border text-gray-800">{seller.email}</td>
@@ -108,24 +98,6 @@ const SellerManagement = () => {
             )}
           </tbody>
         </table>
-      </div>
-
-      {/* Pagination */}
-      <div className="mt-4 flex justify-center">
-        <button
-          onClick={() => paginate(currentPage - 1)}
-          disabled={currentPage === 1}
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md mr-2"
-        >
-          Previous
-        </button>
-        <button
-          onClick={() => paginate(currentPage + 1)}
-          disabled={currentPage * itemsPerPage >= filteredSellers.length}
-          className="px-4 py-2 bg-gray-300 text-gray-700 rounded-md"
-        >
-          Next
-        </button>
       </div>
     </div>
   );

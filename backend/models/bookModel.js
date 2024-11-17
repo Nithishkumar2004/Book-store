@@ -4,7 +4,7 @@ import mongoose from 'mongoose';
 const bookSchema = new mongoose.Schema({
   sellerId: {
     type: mongoose.Schema.Types.ObjectId,
-    ref: 'Seller', // Refers to the seller who is listing the book
+    ref: 'Seller',  // Refers to the seller listing the book
     required: true
   },
   bookName: {
@@ -13,7 +13,7 @@ const bookSchema = new mongoose.Schema({
     trim: true
   },
   bookImage: {
-    type: String, // URL of the image or file path if you are saving locally
+    type: String,  // URL or file path for the book image
     required: true
   },
   price: {
@@ -42,7 +42,7 @@ const bookSchema = new mongoose.Schema({
   },
   description: {
     type: String,
-    trim: true,
+    trim: true
   },
   publisherName: {
     type: String,
@@ -53,29 +53,19 @@ const bookSchema = new mongoose.Schema({
     required: true
   },
   isbn: {
-    type: String, // International Standard Book Number (optional)
+    type: String,  // Optional International Standard Book Number
     unique: true,
     sparse: true
   },
   publicationYear: {
-    type: Number, // Year the book was published
+    type: Number,
     required: true
   },
   edition: {
-    type: String, // Edition information (optional)
+    type: String,  // Optional edition information
     trim: true
   },
-  inventoryCount: {
-    type: Number, // Tracks the number of books available for sale
-    required: true,
-    min: 0,
-    default: 0
-  },
-  purchasedCount: {
-    type: Number, // Tracks the number of books sold/purchased
-    default: 0,
-    min: 0
-  },
+
   createdAt: {
     type: Date,
     default: Date.now

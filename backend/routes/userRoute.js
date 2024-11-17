@@ -5,6 +5,10 @@ import { User } from '../models/userModel.js';
 import dotenv from 'dotenv';
 import { check, validationResult } from 'express-validator'; // For request validation
 import cookieParser from 'cookie-parser';
+import { Book } from '../models/bookModel.js';
+import { Order } from '../models/OrderModel.js';
+import {mongoose,ObjectId} from 'mongoose';
+
 
 dotenv.config(); // Load environment variables from .env
 
@@ -19,9 +23,6 @@ router.use(cookieParser());
 const sendErrorResponse = (res, status, message) => {
   res.status(status).json({ success: false, message });
 };
-
-
-
 
 // Register Route for User
 router.post('/register',
@@ -101,7 +102,7 @@ router.post('/login', async (req, res) => {
 
     // Exclude password from user data
     const { password: _, ...userWithoutPassword } = user.toObject();
-
+    
     // Send token as a cookie
     res.cookie('authToken', token, {
       httpOnly: false, // Prevents client-side JS from accessing the token for security
@@ -115,6 +116,8 @@ router.post('/login', async (req, res) => {
       user: userWithoutPassword,
     });
   } catch (error) {
+
+    
     console.error('Error logging in user:', error);
     res.status(500).json({ success: false, message: 'Server error' });
   }
@@ -133,7 +136,7 @@ router.get('/profile', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
 
     // Find the user by the decoded userId
-    const user = await User.findById(decoded.userId).select('-password'); // Exclude the password from the result
+    const user = await User.findById(decoded.userId).select('-password -cart -orderedItems'); // Exclude the password from the result
 
     if (!user) {
       return sendErrorResponse(res, 404, 'User not found');
@@ -161,7 +164,7 @@ router.put('/profile', async (req, res) => {
     const decoded = jwt.verify(token, JWT_SECRET);
 
     // Find the user by the decoded userId
-    const user = await User.findById(decoded.userId).select('-password'); // Exclude the password from the result
+    const user = await User.findById(decoded.userId).select('-password -orderedItems -cart'); // Exclude the password from the result
 
     if (!user) {
       return sendErrorResponse(res, 404, 'User not found');
@@ -200,13 +203,202 @@ router.put('/profile', async (req, res) => {
 router.post('/logout', (req, res) => {
   try {
     // Clear the JWT cookie
-    res.clearCookie('token');
+    res.clearCookie('authToken');
 
     res.status(200).json({ success: true, message: 'Logged out successfully' });
   } catch (error) {
     console.error('Error logging out:', error);
     sendErrorResponse(res, 500, 'Server error');
   }
+});
+
+// Backend route for adding to cart
+router.post('/addcart', async (req, res) => {
+  try {
+    const { token, bookId, quantity } = req.body; // Extract user ID, book ID, and quantity from request
+
+    const sellerId = Book.findById(bookId).select('sellerId');
+    
+    const decoded = jwt.verify(token, JWT_SECRET); // Decode token to get sellerId
+    const userId = decoded.userId;
+    
+    
+    // Find user and update cart
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Check if the book already exists in the cart
+    const existingCartItem = user.cart.find(item => item.book.toString() === bookId);
+    if (existingCartItem) {
+      existingCartItem.quantity += quantity; // Update quantity if book already in cart
+    } else {
+      user.cart.push({ book: bookId, quantity }); // Add new item to cart
+    }
+
+    await user.save(); // Save updated user data
+    res.status(200).json({ message: 'Book added to cart successfully', cart: user.cart });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to add book to cart', error: error.message });
+  }
+});
+
+// Route to fetch the cart items with book and seller details
+router.get('/cart', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1]; // Extract token from Authorization header
+
+    if (!token) {
+      return res.status(400).json({ message: 'No token provided' });
+    }
+
+    // Decode the token to get the user ID
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Find the user in the database
+    const user = await User.findById(userId).populate({
+      path: 'cart.book',
+      populate: {
+        path: 'sellerId', // Assuming sellerId is a reference to the User model
+        select: 'name email phone companyName', // Choose the seller details you want to return
+      },
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Send the user's cart with book and seller details as a response
+    res.status(200).json({ cart: user.cart });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to fetch cart items', error: error.message });
+  }
+});
+
+// Route to delete an item from the cart
+router.delete('/cart/item/', async (req, res) => {
+  try {
+    // Extract token from Authorization header
+    const token = req.headers.authorization?.split(' ')[1];
+    const { itemId } = req.body; // Extract itemId from the request body
+
+    if (!token) {
+      return res.status(400).json({ message: 'No token provided' });
+    }
+
+    // Decode the token to get the user ID
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Validate itemId before proceeding
+    if (!mongoose.Types.ObjectId.isValid(itemId)) {
+      return res.status(400).json({ message: 'Invalid item ID' });
+    }
+    
+    
+
+    // Filter out the item from the cart by converting item.book to string and comparing with itemId
+    user.cart = user.cart.filter(item => {
+
+
+      const currentid = item._id.toString()
+   
+      
+      const valid= currentid !== itemId;
+   
+
+      return valid; // Keep the item if it's not the one to remove
+    });
+
+
+    // Save the updated user document
+    await user.save();
+
+    res.status(200).json({ message: 'Item removed from cart', cart: user.cart });
+  } catch (error) {
+    console.error('Error removing item from cart:', error);
+    res.status(500).json({ message: 'Failed to remove item from cart', error: error.message });
+  }
+});
+
+
+
+// Route to delete the entire cart
+router.delete('/cart', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1]; // Extract token from Authorization header
+
+    if (!token) {
+      return res.status(400).json({ message: 'No token provided' });
+    }
+
+    // Decode the token to get the user ID
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Find the user and empty the cart
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Empty the cart
+    user.cart = [];
+
+    await user.save(); // Save the updated user document
+
+    res.status(200).json({ message: 'Cart deleted successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Failed to delete cart', error: error.message });
+  }
+});
+
+router.get('/orders', async (req, res) => {
+  try {
+
+    const token = req.headers.authorization?.split(' ')[1];
+    if (!token) {
+      return res.status(401).json({ message: 'Authorization token is missing' });
+    }
+
+    // Verify JWT and decode user information
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Fetch the orders of the user
+    const orders = await Order.find({ buyerId: userId });
+    
+
+    if (orders.length === 0) {
+      return res.status(404).json({ message: 'No orders found for this user' });
+    }
+
+    // Send orders back in response
+    res.status(200).json({ orders });
+
+  } catch (error) {
+    console.error('Error:', error);
+    res.status(500).json({ message: 'An error occurred while fetching orders', error: error.message });
+  }
+});
+
+
+router.put('/cart/:id',async (req,resizeBy)=>{
+
+  
 });
 
 export default router;

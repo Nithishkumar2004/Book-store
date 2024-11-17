@@ -1,23 +1,24 @@
 import CreateBooks from "./seller/CreateBooks";
 import InventoryManagement from "./seller/InventoryManagement";
-import Orders from "./seller/Orders";
+import SellerOrders from "./seller/Orders";
 import Login from "./public/Login";
 import Dashboard from "./admin/Dashboard";
 import Home from "./public/Home";
 import SignUp from "./public/SignUp";
 import Profile from "./user/Profile";
 import Cart from "./user/Cart";
-import Checkout from "./user/Checkout";
+
 import BookDetails from "./user/BookDetails";
 import Feedback from "./user/Feedback";
 import BookManagement from "./admin/BookManagement";
 import SellerManagement from "./admin/SellerManagement";
-import SystemSettings from "./admin/SystemSettings";
+import OrderManagement from "./admin/OrderManagement";
 import UserManagement from "./admin/UserManagement";
 import Notfound from "./public/Notfound";
 import Landingpage from "./public/Landingpage";
 import SellerProfile from "./seller/SellerProfile";
 import PurchasePage from "./user/PurchasePage";
+import UserOrders from "./user/orders";
 
 
 
@@ -33,14 +34,14 @@ export {
   Dashboard,
   Profile,
   Cart,
-  Checkout,
+  UserOrders,
   BookDetails,
   Feedback,
   InventoryManagement,
-  Orders,
+  SellerOrders,
   BookManagement,
   SellerManagement,
-  SystemSettings,
+  OrderManagement,
   UserManagement,
   Notfound,
   Landingpage

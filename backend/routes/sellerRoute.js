@@ -10,7 +10,7 @@ dotenv.config(); // Load environment variables from .env
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRY = process.env.JWT_EXPIRY || '1h'; // Default expiry is 1 hour if not set
+const JWT_EXPIRY = process.env.JWT_EXPIRY || 360000// Default expiry is 1 hour if not set
 
 // Middleware to use cookies
 router.use(cookieParser());
@@ -91,10 +91,10 @@ router.post('/login', async (req, res) => {
     const token = jwt.sign({ sellerId: seller._id }, JWT_SECRET, { expiresIn: JWT_EXPIRY });
 
     const { password: _, ...sellerWithoutPassword } = seller.toObject();
-    
-  
+
+
     res.cookie('authToken', token, {
-      httpOnly: false, 
+      httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
       maxAge: 3600000, // 1 hour
     });
@@ -119,10 +119,10 @@ router.get('/profile', async (req, res) => {
       return sendErrorResponse(res, 401, 'Access denied');
     }
 
-    
+
 
     const decoded = jwt.verify(token, JWT_SECRET);
-    
+
     const seller = await Seller.findById(decoded.sellerId);
 
     if (!seller) {
@@ -175,23 +175,56 @@ router.put('/profile', async (req, res) => {
   }
 });
 
-// Fetch all sellers
-router.get('/sellers', async (req, res) => {
-  try {
-    // Fetch all sellers (assuming there's a Seller model)
-    const sellers = await Seller.find().select('-password'); // Exclude password from the result
 
-    if (!sellers) {
-      return sendErrorResponse(res, 404, 'No sellers found');
+
+
+router.put('/update-inventory/:bookId', async (req, res) => {
+  const { bookId } = req.params;
+  const authToken = req.headers['x-auth-token'];
+
+  // Check if the authorization token is provided
+  if (!authToken) {
+    return res.status(401).json({ success: false, message: 'Authorization token is required' });
+  }
+
+  try {
+    // Verify the token and extract seller ID
+    const decoded = jwt.verify(authToken, JWT_SECRET);
+    const sellerId = decoded.sellerId;
+
+    // Extract and convert inventory count from request body
+    let { inventoryCount } = req.body;
+    inventoryCount = Number(inventoryCount);
+
+
+    // Ensure inventoryCount is provided and is a valid number
+    if (isNaN(inventoryCount) || inventoryCount < 0) {
+      return res.status(400).json({ message: 'Invalid inventoryCount value' });
+    }
+    console.log('Seller ID:', sellerId);
+console.log('Book ID:', bookId);
+
+    // Find the seller and update the specific book's inventory count
+
+    const x =await Seller.find()
+    console.log(x);
+    
+    
+    const seller = await Seller.findOneAndUpdate(
+      { _id: sellerId, 'inventory.bookId': bookId },
+      { $set: { 'inventory.$.count': inventoryCount } },
+      { new: true }
+    );
+
+    if (!seller) {
+     
+      return res.status(404).json({ message: 'Seller or book not found' });
     }
 
-    res.status(200).json({
-      success: true,
-      sellers,
-    });
+    res.status(200).json({ message: 'Inventory updated successfully', seller });
   } catch (error) {
-    console.error('Error fetching sellers:', error);
-    sendErrorResponse(res, 500, 'Server error');
+    console.error(error);
+    res.status(500).json({ message: 'Error updating inventory', error: error.message });
   }
 });
 

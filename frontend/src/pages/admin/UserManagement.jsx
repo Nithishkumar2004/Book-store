@@ -19,7 +19,6 @@ const UserManagement = () => {
         // Update the state with fetched data
         setUsers(userResponse.data.users);
         setFilteredUsers(userResponse.data.users);
-        console.log(userResponse);
       } catch (err) {
         setError('Error fetching data');
         console.error(err);
@@ -81,20 +80,22 @@ const UserManagement = () => {
           <tbody>
             {filteredUsers.length > 0 ? (
               filteredUsers.map((user) => (
-                <tr key={user._id} className="border-t hover:bg-gray-50">
-                  <td className="px-4 py-2 border text-gray-800">{user.name}</td>
-                  <td className="px-4 py-2 border text-gray-800">{user.email}</td>
-                  <td className="px-4 py-2 border text-gray-800">{user.phone}</td>
-                  <td className="px-4 py-2 border text-gray-800">{user.gender}</td>
-                  <td className="px-4 py-2 border text-gray-800">{user.age}</td>
-                  <td className="px-4 py-2 border text-gray-800">{user.address}</td>
-                  <td className="px-4 py-2 border text-gray-800">{user.pincode}</td>
-                  <td className="px-4 py-2 border text-gray-800">{new Date(user.createdAt).toLocaleDateString()}</td>
+                <tr key={user.id} className="text-gray-700">
+                  <td className="px-4 py-2 border">{user.name}</td>
+                  <td className="px-4 py-2 border">{user.email}</td>
+                  <td className="px-4 py-2 border">{user.phone}</td>
+                  <td className="px-4 py-2 border">{user.gender}</td>
+                  <td className="px-4 py-2 border">{user.age}</td>
+                  <td className="px-4 py-2 border">{user.address}</td>
+                  <td className="px-4 py-2 border">{user.pincode}</td>
+                  <td className="px-4 py-2 border">{new Date(user.createdAt).toLocaleDateString()}</td>
                 </tr>
               ))
             ) : (
               <tr>
-                <td colSpan="8" className="text-center py-4 text-gray-600">No users found</td>
+                <td colSpan="8" className="px-4 py-2 text-center text-gray-500">
+                  No users found.
+                </td>
               </tr>
             )}
           </tbody>

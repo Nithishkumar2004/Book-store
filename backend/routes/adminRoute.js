@@ -1,11 +1,10 @@
-
-
 import express from 'express';
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 import cookieParser from 'cookie-parser';
 import { User } from '../models/userModel.js';
 import { Seller } from '../models/sellerModel.js';
+import {Book} from '../models/bookModel.js'
 
 // Initialize environment variables
 dotenv.config();
@@ -16,15 +15,34 @@ const sendErrorResponse = (res, status, message) => {
   res.status(status).json({ success: false, message });
 };
 
-
 router.use(cookieParser());
+
+//Fetch all Books 
+router.get('/books',async (req,res)=>{
+try{
+  const books = await Book.find();
+
+  if(!books){
+    return sendErrorResponse(res,404,"No books found")
+  }
+  res.status(200).json({
+    success:true,
+    books:books,
+  })
+}
+catch(error)
+{
+  sendErrorResponse(res,500,"server error")
+
+}
+});
+
 
 // Fetch all users
 router.get('/users', async (req, res) => {
   try {
     // Fetch all users
     const users = await User.find().select('-password'); // Exclude password from the result
-    console.log(users);
     
     if (!users) {
       return sendErrorResponse(res, 404, 'No users found');
@@ -40,14 +58,12 @@ router.get('/users', async (req, res) => {
   }
 });
 
-
 // Fetch all sellers
 router.get('/sellers', async (req, res) => {
   try {
     // Fetch all sellers
     const sellers = await Seller.find().select('-password'); // Exclude password from the result
-    console.log(sellers);
-    
+      
     if (!sellers || sellers.length === 0) {
       return res.status(404).json({
         success: false,
@@ -68,9 +84,6 @@ router.get('/sellers', async (req, res) => {
   }
 });
 
-
-
-
 // Hardcoded credentials (not recommended for production)
 const ADMIN_USERNAME = 'admin';
 const ADMIN_PASSWORD = 'admin'; // This should be hashed in real applications
@@ -78,8 +91,7 @@ const ADMIN_PASSWORD = 'admin'; // This should be hashed in real applications
 // Admin login route
 router.post('/login', async (req, res) => {
   const { email, password } = req.body;
-  
-  try {
+   try {
     
     // Check if username and password match the hardcoded credentials
     if (email !== ADMIN_USERNAME) {
@@ -119,5 +131,24 @@ router.post('/login', async (req, res) => {
   }
 });
 
+// New route to fetch book count for users, sellers, and total book count
+router.get('/counts', async (req, res) => {
+  try {
+    // Fetch the total count of books in the database
+    const totalBookCount = await Book.countDocuments();
+    const totalUserCount = await User.countDocuments();
+    const totalSellerCount = await Seller.countDocuments();
+    // Send the response with total, user, and seller book counts
+    res.status(200).json({
+      success: true,
+      totalBookCount:totalBookCount, // Total book count
+      totalUserCount: totalUserCount,
+      totalSellerCount: totalSellerCount,
+    });
+  } catch (error) {
+    console.error('Error fetching book counts:', error);
+    sendErrorResponse(res, 500, 'Server error');
+  }
+});
 
 export default router;

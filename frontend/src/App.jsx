@@ -33,7 +33,7 @@ const AuthenticatedApp = () => {
           { name: 'Home', href: '/home' },
           { name: 'Profile', href: 'user/profile' },
           { name: 'Cart', href: '/cart' },
-          { name: 'Checkout', href: '/checkout' },
+          { name: 'orders', href: '/orders' },
           { name: 'Feedback', href: '/feedback' },
         ]);
       } else if (userType === 'seller') {
@@ -41,7 +41,7 @@ const AuthenticatedApp = () => {
           { name: 'Seller Home', href: '/seller/home' },
           { name: 'Create Book', href: '/books/create' },
           { name: 'Inventory', href: '/inventory' },
-          { name: 'Orders', href: '/orders' },
+          { name: 'Orders', href: 'seller/orders' },
         ]);
       } else if (userType === 'admin') {
         setMenuItems([
@@ -49,7 +49,7 @@ const AuthenticatedApp = () => {
           { name: 'User Management', href: '/admin/users' },
           { name: 'Book Management', href: '/admin/books' },
           { name: 'Seller Management', href: '/admin/sellers' },
-          { name: 'System Settings', href: '/admin/settings' },
+          { name: 'Order Management', href: '/admin/orders' },
         ]);
       }
     } else {

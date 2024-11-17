@@ -6,6 +6,7 @@ import { Book } from '../models/bookModel.js';
 import { check, validationResult } from 'express-validator';
 import dotenv from 'dotenv';
 import jwt from 'jsonwebtoken';
+import { Seller } from '../models/sellerModel.js';
 
 dotenv.config(); // Load environment variables from .env
 
@@ -116,11 +117,29 @@ router.post(
         isbn,
         publicationYear,
         edition,
-        inventoryCount: 0, // Set default inventory count to 0
       });
 
       // Save the book to the database
       const savedBook = await newBook.save();
+
+      // Update the seller's inventory with the new book
+      const sellerUpdate = await Seller.findByIdAndUpdate(
+        sellerId,
+        { 
+          $push: { 
+            products: savedBook._id,
+            inventory: { 
+              bookId: savedBook._id,
+              count: 0 // Initial count of books in inventory
+            }
+          }
+        },
+        { new: true }
+      );
+
+      if (!sellerUpdate) {
+        return res.status(404).json({ success: false, message: 'Seller not found' });
+      }
 
       res.status(201).json({ success: true, message: 'Book created successfully', data: savedBook });
     } catch (error) {
@@ -130,36 +149,7 @@ router.post(
   }
 );
 
-// Route to update the inventory count of a book
-router.put('/updateinventory/:bookId', async (req, res) => {
-  try {
-    const { bookId } = req.params;
-    
-    // Convert inventoryCount from string to number
-    let { inventoryCount } = req.body;
-    inventoryCount = Number(inventoryCount);  // Convert string to number
 
-    // Validate the inventory count
-    if (!Number.isInteger(inventoryCount) || inventoryCount < 0) {
-      return res.status(400).json({ success: false, message: 'Inventory count must be a non-negative integer' });
-    }
-
-    // Find the book by its ID and update the inventory count
-    const book = await Book.findById(bookId);
-    if (!book) {
-      return res.status(404).json({ success: false, message: 'Book not found' });
-    }
-
-
-    book.inventoryCount = inventoryCount;
-    await book.save();
-
-    res.status(200).json({ success: true, message: 'Inventory count updated successfully', data: book });
-  } catch (error) {
-    console.error('Error updating inventory:', error);
-    res.status(500).json({ success: false, message: 'Server error' });
-  }
-});
 
 
 // Route to fetch a book by its ID
@@ -197,11 +187,10 @@ router.get('/books', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-
 // Route to fetch books of the current seller
 router.get('/mybooks', async (req, res) => {
   try {
-    const authToken = req.headers['token'];
+    const authToken = req.headers['x-auth-token'];
 
     // Check if the authorization token is provided
     if (!authToken) {
@@ -215,12 +204,16 @@ router.get('/mybooks', async (req, res) => {
     // Fetch books from the database for the current seller
     const books = await Book.find({ sellerId });
 
+    // Fetch the seller document by ID
+    const seller = await Seller.findById(sellerId).select('-password'); // Use sellerId directly here, not an object
+
     // Return the list of books
-    res.status(200).json({ success: true, books });
+    res.status(200).json({ success: true, books, seller });
   } catch (error) {
     console.error('Error fetching books:', error);
     res.status(500).json({ success: false, message: 'Error fetching books' });
   }
 });
+
 
 export default router;

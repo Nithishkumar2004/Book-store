@@ -4,6 +4,7 @@ import booksRoute from './routes/booksRoute.js';
 import userRoute from './routes/userRoute.js';
 import sellerRoute from './routes/sellerRoute.js';
 import AdminRoute from './routes/adminRoute.js';
+import OrderRoute from './routes/OrderRoute.js';
 
 
 import dotenv from 'dotenv';
@@ -30,6 +31,7 @@ app.use('/books', booksRoute);
 app.use('/user', userRoute);
 app.use('/seller', sellerRoute);
 app.use('/admin', AdminRoute);
+app.use('/order', OrderRoute);
 
 
 app.get('*', (req, res) => {
