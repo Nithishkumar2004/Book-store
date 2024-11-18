@@ -7,7 +7,7 @@ const orderSchema = new mongoose.Schema({
     ref: 'User',  // Reference to the User model
     required: true
   },
-  sellerIds: [{
+  sellerId: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Seller',  // Reference to the Seller model
     required: true
@@ -34,7 +34,7 @@ const orderSchema = new mongoose.Schema({
       }
     }
   ],
-  totalPrice: { 
+  totalAmount: {  // Corrected the field name to match your route
     type: Number, 
     required: true 
   },

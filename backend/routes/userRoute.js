@@ -7,8 +7,7 @@ import { check, validationResult } from 'express-validator'; // For request vali
 import cookieParser from 'cookie-parser';
 import { Book } from '../models/bookModel.js';
 import { Order } from '../models/OrderModel.js';
-import {mongoose,ObjectId} from 'mongoose';
-
+import {mongoose} from 'mongoose';
 
 dotenv.config(); // Load environment variables from .env
 
@@ -122,6 +121,7 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
+
 // Add this route to fetch user profile data
 router.get('/profile', async (req, res) => {
   try {
@@ -279,6 +279,7 @@ router.get('/cart', async (req, res) => {
   }
 });
 
+
 // Route to delete an item from the cart
 router.delete('/cart/item/', async (req, res) => {
   try {
@@ -332,9 +333,6 @@ router.delete('/cart/item/', async (req, res) => {
   }
 });
 
-
-
-// Route to delete the entire cart
 router.delete('/cart', async (req, res) => {
   try {
     const token = req.headers.authorization?.split(' ')[1]; // Extract token from Authorization header
@@ -366,6 +364,7 @@ router.delete('/cart', async (req, res) => {
   }
 });
 
+
 router.get('/orders', async (req, res) => {
   try {
 
@@ -380,25 +379,79 @@ router.get('/orders', async (req, res) => {
 
     // Fetch the orders of the user
     const orders = await Order.find({ buyerId: userId });
-    
 
     if (orders.length === 0) {
       return res.status(404).json({ message: 'No orders found for this user' });
     }
 
-    // Send orders back in response
-    res.status(200).json({ orders });
+    // Gather all unique bookIds from all the items in the orders
+    const bookIds = [...new Set(orders.flatMap(order => order.items.map(item => item.bookId)))];
+
+    // Fetch book details for all unique bookIds
+    const books = await Book.find({ '_id': { $in: bookIds } });
+
+
+
+    // Send the book details in the response
+    res.status(200).json({ books: books ,orders:orders});
 
   } catch (error) {
     console.error('Error:', error);
-    res.status(500).json({ message: 'An error occurred while fetching orders', error: error.message });
+    res.status(500).json({ message: 'An error occurred while fetching book details', error: error.message });
   }
 });
 
 
-router.put('/cart/:id',async (req,resizeBy)=>{
 
-  
+router.put('/cart/:id', async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(' ')[1]; // Extract token from Authorization header
+    const { quantity } = req.body; // Extract the new quantity from the request body
+    const { id } = req.params; // Extract the item ID from the URL parameter
+
+    if (!token) {
+      return res.status(400).json({ message: 'No token provided' });
+    }
+
+    // Decode the token to get the user ID
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const userId = decoded.userId;
+
+    // Find the user by ID
+    const user = await User.findById(userId);
+
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Validate the quantity input
+    if (quantity < 1 || isNaN(quantity)) {
+      return res.status(400).json({ message: 'Invalid quantity' });
+    }
+
+    // Find the item in the cart and update its quantity
+    let itemUpdated = false;
+    user.cart = user.cart.map(item => {
+      if (item._id.toString() === id) {
+        item.quantity = quantity; // Update the item quantity
+        itemUpdated = true;
+      }
+      return item;
+    });
+
+    if (!itemUpdated) {
+      return res.status(404).json({ message: 'Item not found in cart' });
+    }
+
+    // Save the updated user document
+    await user.save();
+
+    res.status(200).json({ message: 'Cart updated successfully', cart: user.cart });
+  } catch (error) {
+    console.error('Error updating cart:', error);
+    res.status(500).json({ message: 'Failed to update cart', error: error.message });
+  }
 });
+
 
 export default router;

@@ -9,7 +9,6 @@ dotenv.config(); // Load environment variables from .env
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRY = process.env.JWT_EXPIRY || '1h'; // Default expiry is 1 hour if not set
 
 router.post('/create', async (req, res) => {
   try {
@@ -30,7 +29,7 @@ router.post('/create', async (req, res) => {
 
     const shippingAddress = user.address;
     const orderItems = [];
-    const sellerIds = []; // To keep track of all sellers in the order
+    let sellerId = null; // Variable to store the seller ID for consistency
 
     // Ensure the totalAmount passed matches the calculated total
     let calculatedTotalAmount = 0;
@@ -45,31 +44,31 @@ router.post('/create', async (req, res) => {
         return res.status(404).json({ message: `Book with ID ${item.bookId} not found` });
       }
 
-      sellerIds.push(book.sellerId); // Store sellerId as ObjectId
-
       const itemTotalPrice = item.quantity * item.price;
       calculatedTotalAmount += itemTotalPrice;
 
+      // Check if this is the first item or if it belongs to the same seller
+      if (sellerId === null) {
+        sellerId = book.sellerId;  // Set the seller ID from the first item
+      } else if (!sellerId.equals(book.sellerId)) {
+        return res.status(400).json({ message: 'All books must belong to the same seller. Please remove items from different sellers.' });
+      }
+
       orderItems.push({
-        book: item.bookId,
+        bookId: item.bookId,
         quantity: item.quantity,
         price: item.price,
         totalPrice: itemTotalPrice,
-        sellerId: book.sellerId, // Add sellerId to each item
+        sellerId: book.sellerId, // Still store sellerId for each item but will use the same sellerId
       });
     }
 
-    // Ensure all items belong to the same seller
-    if (new Set(sellerIds.map(id => id.toString())).size > 1) {
-      return res.status(400).json({ message: 'All books must belong to the same seller' });
-    }
-
-    // If everything checks out, create the order
+    // Create the order with the common sellerId
     const order = new Order({
       buyerId: userId,
-      sellerIds, // Store sellerId list as ObjectId array
+      sellerId, // Store only one sellerId
       items: orderItems, // Store items with their details
-      totalAmount, // Keep using the totalAmount passed from the frontend
+      totalAmount: calculatedTotalAmount, // Use the calculated total amount
       status: 'Pending',
       shippingAddress,
       createdAt: new Date(),
@@ -78,8 +77,8 @@ router.post('/create', async (req, res) => {
     await order.save();
 
     // Clear the user's cart after placing the order
-    user.cart = [];
-    await user.save();
+    user.cart = [];  // Clear the cart
+    await user.save();  // Save the updated user document
 
     res.status(201).json({ message: 'Order placed successfully', order });
   } catch (error) {
@@ -87,7 +86,6 @@ router.post('/create', async (req, res) => {
     res.status(500).json({ message: 'An error occurred while placing the order', error: error.message });
   }
 });
-
 
 
 export default router;

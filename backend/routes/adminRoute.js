@@ -5,6 +5,7 @@ import cookieParser from 'cookie-parser';
 import { User } from '../models/userModel.js';
 import { Seller } from '../models/sellerModel.js';
 import {Book} from '../models/bookModel.js'
+import { Order } from '../models/OrderModel.js';
 
 // Initialize environment variables
 dotenv.config();
@@ -130,23 +131,49 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error' });
   }
 });
-
 // New route to fetch book count for users, sellers, and total book count
 router.get('/counts', async (req, res) => {
   try {
-    // Fetch the total count of books in the database
+    // Fetch the total count of books, users, sellers, and orders in the database
     const totalBookCount = await Book.countDocuments();
     const totalUserCount = await User.countDocuments();
     const totalSellerCount = await Seller.countDocuments();
+    const totalOrderCount = await Order.countDocuments();
+
     // Send the response with total, user, and seller book counts
     res.status(200).json({
       success: true,
-      totalBookCount:totalBookCount, // Total book count
-      totalUserCount: totalUserCount,
-      totalSellerCount: totalSellerCount,
+      totalBookCount, // Total book count
+      totalUserCount,
+      totalSellerCount,
+      totalOrderCount, // Total order count
     });
   } catch (error) {
-    console.error('Error fetching book counts:', error);
+    console.error('Error fetching counts:', error);
+    sendErrorResponse(res, 500, 'Server error');
+  }
+});
+
+// Fetch all orders
+router.get('/orders', async (req, res) => {
+  try {
+    // Fetch all orders
+    const orders = await Order.find()
+      .populate('buyerId', 'name email') // Populate buyer details (name, email)
+      .populate('sellerId', 'name email') // Populate seller details (name, email)
+      .populate('items.bookId', 'name price image') // Populate book details for each item
+      .select('-status') // Optionally exclude the status field or any other fields as required
+    
+    if (!orders || orders.length === 0) {
+      return sendErrorResponse(res, 404, 'No orders found');
+    }
+
+    res.status(200).json({
+      success: true,
+      orders,
+    });
+  } catch (error) {
+    console.error('Error fetching orders:', error);
     sendErrorResponse(res, 500, 'Server error');
   }
 });

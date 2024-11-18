@@ -5,6 +5,9 @@ import { Seller } from '../models/sellerModel.js';
 import dotenv from 'dotenv';
 import { check, validationResult } from 'express-validator'; // For request validation
 import cookieParser from 'cookie-parser';
+import { Order } from '../models/OrderModel.js';
+import { User } from '../models/userModel.js';
+import { Book } from '../models/bookModel.js';
 
 dotenv.config(); // Load environment variables from .env
 
@@ -201,15 +204,9 @@ router.put('/update-inventory/:bookId', async (req, res) => {
     if (isNaN(inventoryCount) || inventoryCount < 0) {
       return res.status(400).json({ message: 'Invalid inventoryCount value' });
     }
-    console.log('Seller ID:', sellerId);
-console.log('Book ID:', bookId);
-
+  
     // Find the seller and update the specific book's inventory count
 
-    const x =await Seller.find()
-    console.log(x);
-    
-    
     const seller = await Seller.findOneAndUpdate(
       { _id: sellerId, 'inventory.bookId': bookId },
       { $set: { 'inventory.$.count': inventoryCount } },
@@ -227,5 +224,68 @@ console.log('Book ID:', bookId);
     res.status(500).json({ message: 'Error updating inventory', error: error.message });
   }
 });
+// Route to get the orders for a specific seller
+router.get('/orders', async (req, res) => {
+  try {
+    // Get the authorization token from the headers
+    const token = req.headers.authorization?.split(' ')[1];
+
+    // Check if token is provided
+    if (!token) {
+      return res.status(401).json({ message: 'Authorization token is missing' });
+    }
+
+    // Verify the token
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const sellerId = decoded.sellerId;  // Extract sellerId from decoded token
+
+    // Find the seller from the database
+    const seller = await Seller.findById(sellerId);
+    if (!seller) {
+      return res.status(404).json({ message: 'Seller not found' });
+    }
+
+    // Fetch orders where the sellerId is in the sellerIds array (assuming orders belong to one seller only)
+    const orders = await Order.find({ sellerIds: sellerId });
+
+    // If no orders found
+    if (!orders || orders.length === 0) {
+      return res.status(404).json({ message: 'No orders found for this seller' });
+    }
+
+    // Manually fetch book, seller, and user (buyer) details for each order
+    const ordersWithDetails = await Promise.all(orders.map(async (order) => {
+      // Fetch buyer (user) details
+      const buyer = await User.findById(order.buyerId);  // Assuming order has buyerId field
+      const orderItemsWithBookDetails = await Promise.all(order.items.map(async (item) => {
+        // Fetch book details by ID
+        const book = await Book.findById(item.bookId);
+        return {
+          ...item,
+          bookDetails: book ? {
+            name: book.name,
+            price: book.price,
+            image: book.image || '',  // Assuming book has an 'image' field
+          } : {},
+        };
+      }));
+
+      return {
+        ...order.toObject(),
+        buyerDetails: buyer ? { name: buyer.name, email: buyer.email } : {}, // Buyer details
+        items: orderItemsWithBookDetails,
+      };
+    }));
+
+    // Return the orders with detailed information
+    res.status(200).json({ orders: ordersWithDetails });
+  } catch (error) {
+    console.error('Error fetching seller orders:', error);
+    res.status(500).json({ message: 'An error occurred while fetching the seller orders', error: error.message });
+  }
+});
+
+
+
 
 export default router;

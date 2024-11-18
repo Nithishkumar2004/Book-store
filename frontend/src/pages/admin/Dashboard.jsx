@@ -25,6 +25,7 @@ const Dashboard = () => {
     totalBookCount: 0,
     totalUserCount: 0,
     totalSellerCount: 0,
+    totalOrderCount: 0, // Added order count
   });
 
   const [chartData, setChartData] = useState({
@@ -52,11 +53,12 @@ const Dashboard = () => {
             totalBookCount: result.totalBookCount,
             totalUserCount: result.totalUserCount,
             totalSellerCount: result.totalSellerCount,
+            totalOrderCount: result.totalOrderCount, // Set the order count
           });
 
           // Set chart data
           setChartData({
-            labels: ['Total Books', 'Total Users', 'Total Sellers'],
+            labels: ['Total Books', 'Total Users', 'Total Sellers', 'Total Orders'], // Updated labels
             datasets: [
               {
                 label: 'Total Counts',
@@ -64,11 +66,13 @@ const Dashboard = () => {
                   result.totalBookCount,
                   result.totalUserCount,
                   result.totalSellerCount,
+                  result.totalOrderCount, // Added order count data
                 ],
                 backgroundColor: [
                   'rgba(75, 192, 192, 0.6)', // Color for Total Books
                   'rgba(153, 102, 255, 0.6)', // Color for Total Users
                   'rgba(255, 159, 64, 0.6)', // Color for Total Sellers
+                  'rgba(54, 162, 235, 0.6)', // Color for Total Orders
                 ],
                 borderColor: 'rgba(75, 192, 192, 1)',
                 borderWidth: 1,
@@ -98,7 +102,7 @@ const Dashboard = () => {
       },
       title: {
         display: true,
-        text: 'Total Counts of Books, Users, and Sellers',
+        text: 'Total Counts of Books, Users, Sellers, and Orders', // Updated title
       },
     },
     layout: {

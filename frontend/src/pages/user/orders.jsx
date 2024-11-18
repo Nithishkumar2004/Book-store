@@ -2,16 +2,22 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import Endpoint from '../../Endpoint/Endpoint';
 import { useAuth } from '../../context/AuthContext';
-import { useNavigate } from 'react-router-dom'; // Import navigation hook
+import { useNavigate } from 'react-router-dom';
+import { useSnackbar } from 'notistack';
 
 const Order = () => {
+  const { enqueueSnackbar } = useSnackbar();
+
   const [cart, setCart] = useState([]); // To store cart items
   const [totalPrice, setTotalPrice] = useState(0); // To store total price
   const [loadingCart, setLoadingCart] = useState(true); // Loading state for cart
   const [loadingOrders, setLoadingOrders] = useState(true); // Loading state for past orders
   const [orderStatus, setOrderStatus] = useState(''); // To handle order status (e.g., placing, placed, failed)
+  const [bookDetails, setBookDetails] = useState([]); // To store book details separately
   const [pastOrders, setPastOrders] = useState([]); // To store past orders
   const [showModal, setShowModal] = useState(false); // To control modal visibility
+  const [sameSeller, setSameSeller] = useState(true); // To track if all items are from the same seller
+  const [expandedOrderId, setExpandedOrderId] = useState(null); // To track the expanded order for subrows
   const { authToken } = useAuth(); // Get authToken from context
   const navigate = useNavigate(); // Initialize navigate function
 
@@ -22,80 +28,102 @@ const Order = () => {
         headers: { Authorization: `Bearer ${authToken}` },
       });
       const fetchedCart = response.data.cart;
+
       setCart(fetchedCart);
 
       // Calculate total price
       let total = 0;
+      let sellerId = null;
+
       fetchedCart.forEach((item) => {
-        total += item.quantity * item.book.price;
+        const price = item.book?.price || 0;
+        const quantity = item.quantity || 0;
+        total += quantity * price;
+
+        if (sellerId === null) {
+          sellerId = item.book?.sellerId._id; // Get the sellerId of the first item
+        } else if (item.book?.sellerId._id !== sellerId) {
+          setSameSeller(false); // If any item has a different sellerId, set to false
+        }
       });
+
       setTotalPrice(total);
-      setLoadingCart(false); // Set loadingCart to false when cart is fetched
+      setLoadingCart(false);
     } catch (error) {
-      console.error('Failed to fetch cart items:', error);
-      setLoadingCart(false); // Set loadingCart to false in case of an error
+      setLoadingCart(false);
     }
   };
 
-  // Function to fetch past orders
   const fetchPastOrders = async () => {
     try {
       const response = await axios.get(`${Endpoint}user/orders`, {
         headers: { Authorization: `Bearer ${authToken}` },
       });
-      setPastOrders(response.data.orders); // Assuming response contains a list of past orders
-      setLoadingOrders(false); // Set loadingOrders to false when past orders are fetched
+
+      setPastOrders(response.data.orders);
+      setBookDetails(response.data.books); // Store book details separately
+      setLoadingOrders(false);
     } catch (error) {
-      setLoadingOrders(false); // Set loadingOrders to false in case of an error
-      console.log(error);
-      
+      console.error("Error fetching past orders:", error);
+      setLoadingOrders(false);
     }
   };
 
   // Function to handle placing the order
   const handlePlaceOrder = async () => {
     setShowModal(false);
+    if (!sameSeller) {
+      enqueueSnackbar(`All items must belong to the same seller.`, { variant: 'error' });
+      navigate(`/cart`);
+      return; // Prevent order placement if items are from different sellers
+    }
 
     const orderItems = cart.map((item) => ({
-      bookId: item.book._id,  // Passing bookId
-      quantity: item.quantity,  // Passing quantity
-      price: item.book.price,  // Passing price
+      bookId: item.book._id,
+      quantity: item.quantity,
+      price: item.book.price,
     }));
 
     const orderData = {
       items: orderItems,
-      totalPrice: totalPrice,  // Updating totalPrice field
-      shippingAddress: "Dummy Address", // You can replace this with an actual address input if needed
+      totalPrice: totalPrice,
+      shippingAddress: "Dummy Address",
     };
-    console.log(orderData); // Log orderData to see the structure before sending it to the backend
 
     try {
       setOrderStatus('placing');
       const response = await axios.post(`${Endpoint}order/create`, orderData, {
-        headers: { Authorization: `Bearer ${authToken}` }, // Pass authToken in headers for authentication
+        headers: { Authorization: `Bearer ${authToken}` },
       });
 
       if (response.status === 200) {
         setOrderStatus('placed');
         setCart([]); // Clear the cart after the order is placed
+        fetchPastOrders();
         setTotalPrice(0);
         setShowModal(false); // Close modal after order is placed
       } else {
         setOrderStatus('failed');
-        console.error('Failed to place the order:', response.data.message);
       }
     } catch (error) {
       setOrderStatus('failed');
-      console.error('Error placing order:', error);
+    }
+  };
+
+  // Toggle the expanded row for a specific order
+  const handleToggleExpanded = (orderId) => {
+    if (expandedOrderId === orderId) {
+      setExpandedOrderId(null); // Collapse if the same row is clicked
+    } else {
+      setExpandedOrderId(orderId); // Expand the clicked row
     }
   };
 
   useEffect(() => {
     fetchCart();
-    fetchPastOrders(); // Fetch past orders when the page loads
+    fetchPastOrders();
   }, []); // Empty dependency array ensures this runs only once when the component is mounted
 
-  // Return loading state while cart or past orders are being fetched
   if (loadingCart || loadingOrders) {
     return <div>Loading...</div>;
   }
@@ -118,23 +146,25 @@ const Order = () => {
               </tr>
             </thead>
             <tbody>
-              {cart.map((item) => (
-                <tr key={item._id} className="border-b">
-                  <td className="py-2 px-4">
-                    <img
-                      src={item.book.bookImage}
-                      alt={item.book.bookName}
-                      className="w-20 h-20 object-cover"
-                    />
-                  </td>
-                  <td className="py-2 px-4">{item.book.bookName}</td>
-                  <td className="py-2 px-4">{item.quantity}</td>
-                  <td className="py-2 px-4">₹{item.book.price.toFixed(2)}</td>
-                  <td className="py-2 px-4">
-                    ₹{(item.quantity * item.book.price).toFixed(2)}
-                  </td>
-                </tr>
-              ))}
+              {cart.map((item) => {
+                const price = item.book?.price || 0;
+                const total = (item.quantity || 0) * price;
+                return (
+                  <tr key={item._id} className="border-b">
+                    <td className="py-2 px-4">
+                      <img
+                        src={item.book.bookImage}
+                        alt={item.book.bookName}
+                        className="w-20 h-20 object-cover"
+                      />
+                    </td>
+                    <td className="py-2 px-4">{item.book.bookName}</td>
+                    <td className="py-2 px-4">{item.quantity}</td>
+                    <td className="py-2 px-4">₹{price.toFixed(2)}</td>
+                    <td className="py-2 px-4">₹{total.toFixed(2)}</td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>
@@ -142,18 +172,36 @@ const Order = () => {
       <div className="mt-4 text-right">
         <h3 className="text-xl font-semibold">Total Price: ₹{totalPrice.toFixed(2)}</h3>
         <button
-          onClick={() => setShowModal(true)} // Show modal when clicked
+          onClick={() => setShowModal(true)}
           className="mt-2 px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
         >
           Place Order
         </button>
-        {orderStatus === 'failed' && (
-          <p className="text-red-500 mt-2">Failed to place the order. Please try again.</p>
-        )}
-        {orderStatus === 'placed' && (
-          <p className="text-green-500 mt-2">Order placed successfully!</p>
-        )}
       </div>
+
+      {/* Confirmation Modal */}
+      {showModal && (
+        <div className="fixed inset-0 flex items-center justify-center bg-gray-500 bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg max-w-sm w-full">
+            <h3 className="text-xl font-bold mb-4">Confirm Order</h3>
+            <p>Are you sure you want to place this order?</p>
+            <div className="mt-4 flex justify-between">
+              <button
+                onClick={handlePlaceOrder}
+                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
+              >
+                Yes, Place Order
+              </button>
+              <button
+                onClick={() => setShowModal(false)}
+                className="px-4 py-2 bg-red-500 text-white rounded hover:bg-red-600"
+              >
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Past Orders Section */}
       <div className="mt-8">
@@ -161,54 +209,104 @@ const Order = () => {
         {pastOrders.length === 0 ? (
           <p>No past orders found.</p>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto mt-4">
             <table className="min-w-full table-auto border-collapse">
               <thead>
                 <tr className="bg-gray-100">
                   <th className="py-2 px-4 border-b text-left">Order ID</th>
                   <th className="py-2 px-4 border-b text-left">Date</th>
-                  <th className="py-2 px-4 border-b text-left">Total Amount</th>
+                  <th className="py-2 px-4 border-b text-left">Total</th>
                   <th className="py-2 px-4 border-b text-left">Status</th>
+
+                  <th className="py-2 px-4 border-b text-left">Action</th>
                 </tr>
               </thead>
               <tbody>
-                {pastOrders.map((order) => (
-                  <tr key={order._id} className="border-b">
-                    <td className="py-2 px-4">{order._id}</td>
-                    <td className="py-2 px-4">{new Date(order.createdAt).toLocaleDateString()}</td>
-                    <td className="py-2 px-4">₹{order.totalPrice.toFixed(2)}</td>
-                    <td className="py-2 px-4">{order.status}</td>
-                  </tr>
-                ))}
+                {pastOrders.map((order) => {
+                  const orderDate = new Date(order.orderDate);
+
+                  const formattedDate = `${orderDate.getDate()}/${orderDate.getMonth() + 1}/${orderDate.getFullYear()}`;
+                  const orderTotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+                  return (
+                    <React.Fragment key={order._id}>
+                      <tr className="border-b">
+                        <td className="py-2 px-4">{order._id}</td>
+                        <td className="py-2 px-4">{formattedDate}</td>
+                        <td className="py-2 px-4">₹{orderTotal.toFixed(2)}</td>
+                        <td>{order.status}</td>
+                        <td className="py-2 px-4">
+                          <button
+                            onClick={() => handleToggleExpanded(order._id)}
+                            className="text-blue-500 hover:text-blue-700"
+                          >
+                            {expandedOrderId === order._id ? 'Hide Details' : 'Show Details'}
+                          </button>
+                        </td>
+                      </tr>
+
+                      {expandedOrderId === order._id && (
+                        <tr className="bg-gray-50">
+                          <td colSpan="4" className="py-2 px-4">
+                            <table className="w-full">
+                              <thead>
+                                <tr>
+                                  <th className="py-2 px-4 border-b">Book Image</th> {/* New column for image */}
+                                  <th className="py-2 px-4 border-b">Book Name</th>
+                                  <th className="py-2 px-4 border-b">Quantity</th>
+                                  <th className="py-2 px-4 border-b">Price</th>
+                                  <th className="py-2 px-4 border-b">Total</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {order.items.map((item) => {
+                                  // Look up the book details
+                                  const bookDetail = bookDetails.find(
+                                    (book) => book._id === item.bookId
+                                  );
+
+                                  const bookName = bookDetail ? bookDetail.bookName : 'Unknown';
+                                  const bookPrice = bookDetail ? bookDetail.price : 0;
+                                  const bookImage = bookDetail ? bookDetail.bookImage : ''; // Assuming imageUrl is the key for the image
+                                  const total = bookPrice * item.quantity;
+
+                                  return (
+                                    <tr key={item._id}>
+                                      <td className="py-2 px-4">
+                                        {bookImage ? (
+                                          <img
+                                            src={bookImage}
+                                            alt={bookName}
+                                            className="w-12 h-12 object-cover"
+                                          />
+                                        ) : (
+                                          <img
+                                            src="/path/to/default-image.jpg" // Your default image path here
+                                            alt="No Image"
+                                            className="w-12 h-12 object-cover"
+                                          />
+                                        )}
+                                      </td>
+                                      <td className="py-2 px-4">{bookName}</td>
+                                      <td className="py-2 px-4">{item.quantity}</td>
+                                      <td className="py-2 px-4">₹{bookPrice.toFixed(2)}</td>
+                                      <td className="py-2 px-4">₹{total.toFixed(2)}</td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      )}
+
+                    </React.Fragment>
+                  );
+                })}
               </tbody>
             </table>
           </div>
         )}
       </div>
-
-      {/* Modal for Order Confirmation */}
-      {showModal && (
-        <div className="fixed inset-0 bg-gray-500 bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-            <h2 className="text-xl font-bold mb-4">Confirm Your Order</h2>
-            <p className="mb-4">Are you sure you want to place this order?</p>
-            <div className="flex justify-between">
-              <button
-                onClick={() => setShowModal(false)} // Close modal without placing order
-                className="px-4 py-2 bg-gray-300 text-black rounded hover:bg-gray-400"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handlePlaceOrder} // Place the order and close modal
-                className="px-4 py-2 bg-green-500 text-white rounded hover:bg-green-600"
-              >
-                Confirm
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
