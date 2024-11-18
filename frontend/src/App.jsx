@@ -34,7 +34,6 @@ const AuthenticatedApp = () => {
           { name: 'Profile', href: 'user/profile' },
           { name: 'Cart', href: '/cart' },
           { name: 'orders', href: '/orders' },
-          { name: 'Feedback', href: '/feedback' },
         ]);
       } else if (userType === 'seller') {
         setMenuItems([

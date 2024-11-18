@@ -5,6 +5,7 @@ import Endpoint from '../../Endpoint/Endpoint';
 import { useAuth } from '../../context/AuthContext';
 
 const BookInventoryTable = ({ books, onUpdateInventory }) => {
+  
   return (
     <div className="overflow-x-auto">
       <table className="min-w-full divide-y divide-gray-200">
@@ -19,9 +20,7 @@ const BookInventoryTable = ({ books, onUpdateInventory }) => {
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               Current Inventory
             </th>
-            <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-              Purchased
-            </th>
+        
             <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
               Update
             </th>
@@ -29,7 +28,7 @@ const BookInventoryTable = ({ books, onUpdateInventory }) => {
         </thead>
         <tbody className="bg-white divide-y divide-gray-200">
           {books.map((book) => (
-            <tr key={book._id}>
+            <tr key={book.bookId}>
               <td className="px-6 py-4 whitespace-nowrap">
                 <div className="text-sm font-medium text-gray-900">{book.bookName}</div>
               </td>
@@ -42,17 +41,13 @@ const BookInventoryTable = ({ books, onUpdateInventory }) => {
               </td>
               <td className="px-6 py-4 text-right whitespace-nowrap">
                 <span className="text-sm font-medium text-gray-900">
-                  {book.inventoryCount || 'Not Available'} {/* Display inventory count */}
+                  {book.count || 'Not Available'}
                 </span>
               </td>
-              <td className="px-6 py-4 text-right whitespace-nowrap">
-                <span className="text-sm font-medium text-gray-900">
-                  {book.purchasedCount}
-                </span>
-              </td>
+           
               <td className="px-6 py-4 text-right whitespace-nowrap">
                 <button
-                  onClick={() => onUpdateInventory(book._id, book.inventoryCount)}
+                  onClick={() => onUpdateInventory(book.bookId, book.count)}
                   className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
                 >
                   Update
@@ -76,51 +71,68 @@ const InventoryManagement = () => {
   const [updatedBookId, setUpdatedBookId] = useState(null);
   const [updatedInventory, setUpdatedInventory] = useState(null);
   const { authToken } = useAuth();
-  
-  // Fetch books when the component mounts
-  useEffect(() => {
-    const fetchBooks = async () => {
-      try {
-        const response = await axios.get(`${Endpoint}books/mybooks`, {
-          headers: {
-            'X-Auth-Token': authToken,
-          },
-        });        
-        setBooks(response.data.books);
 
-        setLoading(false);
-      } catch (err) {
-        setError('Failed to fetch books');
-        setLoading(false);
+  // Fetch books when the component mounts
+  const fetchBooks = async () => {
+    try {
+      const response = await axios.get(`${Endpoint}seller/inventory`, {
+        headers: {
+          'X-Auth-Token': authToken,
+        },
+      });
+      
+      if (response.data && response.data) {
+        setBooks(response.data.seller.inventory);
+      } else {
+        setError('No books found');
       }
-    };
+
+      setLoading(false);
+    } catch (err) {
+      setError('Failed to fetch books');
+      setLoading(false);
+    }
+  };
+  useEffect(() => {
+   
 
     fetchBooks();
   }, [authToken]);
 
-  // Handle inventory update submission
+  // Fetch and display current inventory count
   const handleUpdateInventory = (bookId, currentInventory) => {
     setUpdatedBookId(bookId);
     setUpdatedInventory(currentInventory || '');  // Ensure the value is set correctly
     setShowUpdateModal(true);
   };
 
+  
+
+  // Handle inventory update submission
   const handleConfirmUpdate = async () => {
     try {
-      await axios.put(`${Endpoint}seller/update-inventory/${updatedBookId}`, { inventoryCount: updatedInventory }, {
-        headers: { 'x-auth-token': authToken },
-      });
-
-      setBooks((prevBooks) =>
-        prevBooks.map((book) =>
-          book._id === updatedBookId ? { ...book, inventoryCount: updatedInventory } : book
-        )
+      
+      // Update inventory in the database
+      const response = await axios.put(
+        `${Endpoint}seller/update-inventory/${updatedBookId}`,
+        { inventoryCount: updatedInventory },
+        {
+          headers: { 'x-auth-token': authToken },
+        }
       );
+      
+      if (response.status==200) {
+        // Update the books list state with the new inventory count
+        fetchBooks();
 
-      setShowUpdateModal(false);
-      setUpdatedBookId(null);
-      setUpdatedInventory(null);
+
+        // Close the modal and reset states
+        setShowUpdateModal(false);
+        setUpdatedBookId(null);
+        setUpdatedInventory(null);
+      } 
     } catch (err) {
+      
       setError('Failed to update inventory');
     }
   };

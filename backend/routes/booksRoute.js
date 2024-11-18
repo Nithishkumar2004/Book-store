@@ -187,33 +187,7 @@ router.get('/books', async (req, res) => {
     res.status(500).json({ success: false, message: 'Server error' });
   }
 });
-// Route to fetch books of the current seller
-router.get('/mybooks', async (req, res) => {
-  try {
-    const authToken = req.headers['x-auth-token'];
 
-    // Check if the authorization token is provided
-    if (!authToken) {
-      return res.status(401).json({ success: false, message: 'Authorization token is required' });
-    }
-
-    // Verify the token and extract seller ID
-    const decoded = jwt.verify(authToken, JWT_SECRET);
-    const sellerId = decoded.sellerId;
-
-    // Fetch books from the database for the current seller
-    const books = await Book.find({ sellerId });
-
-    // Fetch the seller document by ID
-    const seller = await Seller.findById(sellerId).select('-password'); // Use sellerId directly here, not an object
-
-    // Return the list of books
-    res.status(200).json({ success: true, books, seller });
-  } catch (error) {
-    console.error('Error fetching books:', error);
-    res.status(500).json({ success: false, message: 'Error fetching books' });
-  }
-});
 
 
 export default router;

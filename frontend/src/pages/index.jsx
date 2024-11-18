@@ -9,7 +9,6 @@ import Profile from "./user/Profile";
 import Cart from "./user/Cart";
 
 import BookDetails from "./user/BookDetails";
-import Feedback from "./user/Feedback";
 import BookManagement from "./admin/BookManagement";
 import SellerManagement from "./admin/SellerManagement";
 import OrderManagement from "./admin/OrderManagement";
@@ -19,6 +18,7 @@ import Landingpage from "./public/Landingpage";
 import SellerProfile from "./seller/SellerProfile";
 import PurchasePage from "./user/PurchasePage";
 import UserOrders from "./user/orders";
+import SellerHome from "./seller/SellerHome";
 
 
 
@@ -26,7 +26,7 @@ import UserOrders from "./user/orders";
 export {
   SellerProfile,
   PurchasePage,
-  
+  SellerHome,
   Home,
   CreateBooks,
   SignUp,
@@ -36,7 +36,7 @@ export {
   Cart,
   UserOrders,
   BookDetails,
-  Feedback,
+  
   InventoryManagement,
   SellerOrders,
   BookManagement,

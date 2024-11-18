@@ -75,20 +75,26 @@ const BookManagement = () => {
           className="p-2 border border-gray-300 rounded-lg shadow-sm"
         >
           <option value="">All Genres</option>
-          <option value="Non-Fiction">Non-Fiction</option>
-          <option value="Mystery">Mystery</option>
-          {/* Add more genre options as needed */}
+          <option value="fiction">Fiction</option>
+            <option value="mystery">Mystery</option>
+            <option value="science_fiction">Science Fiction</option>
+            <option value="non_fiction">Non-fiction</option>
+            <option value="fantasy">Fantasy</option>
+            <option value="romance">Romance</option>
+            <option value="history">History</option>
+            <option value="biography">Biography</option>
         </select>
         <select
           name="language"
           value={filters.language}
           onChange={handleFilterChange}
           className="p-2 border border-gray-300 rounded-lg shadow-sm"
-        >
-          <option value="">All Languages</option>
-          <option value="Tamil">Tamil</option>
-          <option value="Hindi">Hindi</option>
-          {/* Add more language options as needed */}
+        >     <option value="">Select Language</option>
+        <option value="English">English</option>
+        <option value="Hindi">Hindi</option>
+        <option value="Tamil">Tamil</option>
+        <option value="Spanish">Spanish</option>
+        <option value="French">French</option>
         </select>
       </div>
 
@@ -118,7 +124,7 @@ const BookManagement = () => {
                 <td className="px-4 py-2 border">{book.bookName}</td>
                 <td className="px-4 py-2 border">{book.authorName}</td>
                 <td className="px-4 py-2 border">{book.genre}</td>
-                <td className="px-4 py-2 border">${book.price}</td>
+                <td className="px-4 py-2 border">₹{book.price}</td>
                 <td className="px-4 py-2 border">{book.language}</td>
                 <td className="px-4 py-2 border">{book.publicationYear}</td>
               </tr>

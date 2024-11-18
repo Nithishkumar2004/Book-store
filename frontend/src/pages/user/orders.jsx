@@ -4,6 +4,7 @@ import Endpoint from '../../Endpoint/Endpoint';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { useSnackbar } from 'notistack';
+import { FaTimes } from 'react-icons/fa'; // Importing red cross icon from react-icons
 
 const Order = () => {
   const { enqueueSnackbar } = useSnackbar();
@@ -96,8 +97,13 @@ const Order = () => {
         headers: { Authorization: `Bearer ${authToken}` },
       });
 
+      
+
       if (response.status === 200) {
         setOrderStatus('placed');
+        await fetchPastOrders();
+        enqueueSnackbar("Order Placed Successfully",{variant:'success'})
+
         setCart([]); // Clear the cart after the order is placed
         fetchPastOrders();
         setTotalPrice(0);
@@ -110,6 +116,36 @@ const Order = () => {
     }
   };
 
+  // Function to handle canceling an order
+  const handleCancelOrder = async (orderId, status) => {
+    if (status !== 'Pending') {
+      enqueueSnackbar(`${status} orders cannot be canceled`, { variant: 'error' });
+      return;
+    }
+  
+    try {
+      const response = await axios.patch(
+        `${Endpoint}order/cancel/${orderId}`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${authToken}` },
+        }
+      );
+  
+      if (response.status === 200) {
+        enqueueSnackbar('Order canceled successfully', { variant: 'success' });
+        // Re-fetch past orders to update the UI
+        fetchPastOrders();
+      }
+    } catch (error) {
+      console.error('Error canceling order:', error);
+      enqueueSnackbar('Failed to cancel the order', { variant: 'error' });
+    }
+  };
+  
+
+
+  
   // Toggle the expanded row for a specific order
   const handleToggleExpanded = (orderId) => {
     if (expandedOrderId === orderId) {
@@ -203,110 +239,118 @@ const Order = () => {
         </div>
       )}
 
-      {/* Past Orders Section */}
-      <div className="mt-8">
-        <h3 className="text-xl font-bold">Your Past Orders</h3>
-        {pastOrders.length === 0 ? (
-          <p>No past orders found.</p>
-        ) : (
-          <div className="overflow-x-auto mt-4">
-            <table className="min-w-full table-auto border-collapse">
-              <thead>
-                <tr className="bg-gray-100">
-                  <th className="py-2 px-4 border-b text-left">Order ID</th>
-                  <th className="py-2 px-4 border-b text-left">Date</th>
-                  <th className="py-2 px-4 border-b text-left">Total</th>
-                  <th className="py-2 px-4 border-b text-left">Status</th>
+ {/* Past Orders Section */}
+<div className="mt-8">
+  <h3 className="text-xl font-bold">Your Past Orders</h3>
+  {pastOrders.length === 0 ? (
+    <p>No past orders found.</p>
+  ) : (
+    <div className="overflow-x-auto mt-4">
+      <table className="min-w-full table-auto border-collapse">
+        <thead>
+          <tr className="bg-gray-100">
+            <th className="py-2 px-4 border-b text-left">Order ID</th>
+            <th className="py-2 px-4 border-b text-left">Date</th>
+            <th className="py-2 px-4 border-b text-left">Total</th>
+            <th className="py-2 px-4 border-b text-left">Status</th>
+            <th className="py-2 px-4 border-b text-left">Action</th>
+            <th className="py-2 px-4 border-b text-left">Cancel Order</th>
+          </tr>
+        </thead>
+        <tbody>
+          {pastOrders.map((order) => {
+            const orderDate = new Date(order.orderDate);
+            const formattedDate = `${orderDate.getDate()}/${orderDate.getMonth() + 1}/${orderDate.getFullYear()}`;
+            const orderTotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
-                  <th className="py-2 px-4 border-b text-left">Action</th>
+            return (
+              <React.Fragment key={order._id}>
+                <tr className="border-b">
+                  <td className="py-2 px-4">{order._id}</td>
+                  <td className="py-2 px-4">{formattedDate}</td>
+                  <td className="py-2 px-4">₹{orderTotal.toFixed(2)}</td>
+                  <td>{order.status}</td>
+                  <td className="py-2 px-4">
+                    <button
+                      onClick={() => handleToggleExpanded(order._id)}
+                      className="text-blue-500 hover:text-blue-700"
+                    >
+                      {expandedOrderId === order._id ? 'Hide Details' : 'Show Details'}
+                    </button>
+                  </td>
+                  <td>
+                    {order.status !== 'shipped' ? (
+                      <FaTimes
+                        className="text-red-600 hover:text-red-800 cursor-pointer"
+                        onClick={() => handleCancelOrder(order._id, order.status)}
+                      />
+                    ) : (
+                      <span className="text-gray-500">Shipped - Cannot Cancel</span>
+                    )}
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {pastOrders.map((order) => {
-                  const orderDate = new Date(order.orderDate);
 
-                  const formattedDate = `${orderDate.getDate()}/${orderDate.getMonth() + 1}/${orderDate.getFullYear()}`;
-                  const orderTotal = order.items.reduce((sum, item) => sum + item.price * item.quantity, 0);
-                  return (
-                    <React.Fragment key={order._id}>
-                      <tr className="border-b">
-                        <td className="py-2 px-4">{order._id}</td>
-                        <td className="py-2 px-4">{formattedDate}</td>
-                        <td className="py-2 px-4">₹{orderTotal.toFixed(2)}</td>
-                        <td>{order.status}</td>
-                        <td className="py-2 px-4">
-                          <button
-                            onClick={() => handleToggleExpanded(order._id)}
-                            className="text-blue-500 hover:text-blue-700"
-                          >
-                            {expandedOrderId === order._id ? 'Hide Details' : 'Show Details'}
-                          </button>
-                        </td>
-                      </tr>
+                {expandedOrderId === order._id && (
+                  <tr className="bg-gray-50">
+                    <td colSpan="4" className="py-2 px-4">
+                      <table className="w-full">
+                        <thead>
+                          <tr>
+                            <th className="py-2 px-4 border-b">Book Image</th>
+                            <th className="py-2 px-4 border-b">Book Name</th>
+                            <th className="py-2 px-4 border-b">Quantity</th>
+                            <th className="py-2 px-4 border-b">Price</th>
+                            <th className="py-2 px-4 border-b">Total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {order.items.map((item) => {
+                            const bookDetail = bookDetails.find(
+                              (book) => book._id === item.bookId
+                            );
+                            const bookName = bookDetail ? bookDetail.bookName : 'Unknown';
+                            const bookPrice = bookDetail ? bookDetail.price : 0;
+                            const bookImage = bookDetail ? bookDetail.bookImage : ''; // Assuming imageUrl is the key for the image
+                            const total = bookPrice * item.quantity;
 
-                      {expandedOrderId === order._id && (
-                        <tr className="bg-gray-50">
-                          <td colSpan="4" className="py-2 px-4">
-                            <table className="w-full">
-                              <thead>
-                                <tr>
-                                  <th className="py-2 px-4 border-b">Book Image</th> {/* New column for image */}
-                                  <th className="py-2 px-4 border-b">Book Name</th>
-                                  <th className="py-2 px-4 border-b">Quantity</th>
-                                  <th className="py-2 px-4 border-b">Price</th>
-                                  <th className="py-2 px-4 border-b">Total</th>
-                                </tr>
-                              </thead>
-                              <tbody>
-                                {order.items.map((item) => {
-                                  // Look up the book details
-                                  const bookDetail = bookDetails.find(
-                                    (book) => book._id === item.bookId
-                                  );
+                            return (
+                              <tr key={item._id}>
+                                <td className="py-2 px-4">
+                                  {bookImage ? (
+                                    <img
+                                      src={bookImage}
+                                      alt={bookName}
+                                      className="w-12 h-12 object-cover"
+                                    />
+                                  ) : (
+                                    <img
+                                      src="/path/to/default-image.jpg" // Your default image path here
+                                      alt="No Image"
+                                      className="w-12 h-12 object-cover"
+                                    />
+                                  )}
+                                </td>
+                                <td className="py-2 px-4">{bookName}</td>
+                                <td className="py-2 px-4">{item.quantity}</td>
+                                <td className="py-2 px-4">₹{bookPrice.toFixed(2)}</td>
+                                <td className="py-2 px-4">₹{total.toFixed(2)}</td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </td>
+                  </tr>
+                )}
+              </React.Fragment>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  )}
+</div>
 
-                                  const bookName = bookDetail ? bookDetail.bookName : 'Unknown';
-                                  const bookPrice = bookDetail ? bookDetail.price : 0;
-                                  const bookImage = bookDetail ? bookDetail.bookImage : ''; // Assuming imageUrl is the key for the image
-                                  const total = bookPrice * item.quantity;
-
-                                  return (
-                                    <tr key={item._id}>
-                                      <td className="py-2 px-4">
-                                        {bookImage ? (
-                                          <img
-                                            src={bookImage}
-                                            alt={bookName}
-                                            className="w-12 h-12 object-cover"
-                                          />
-                                        ) : (
-                                          <img
-                                            src="/path/to/default-image.jpg" // Your default image path here
-                                            alt="No Image"
-                                            className="w-12 h-12 object-cover"
-                                          />
-                                        )}
-                                      </td>
-                                      <td className="py-2 px-4">{bookName}</td>
-                                      <td className="py-2 px-4">{item.quantity}</td>
-                                      <td className="py-2 px-4">₹{bookPrice.toFixed(2)}</td>
-                                      <td className="py-2 px-4">₹{total.toFixed(2)}</td>
-                                    </tr>
-                                  );
-                                })}
-                              </tbody>
-                            </table>
-                          </td>
-                        </tr>
-                      )}
-
-                    </React.Fragment>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-      </div>
     </div>
   );
 };

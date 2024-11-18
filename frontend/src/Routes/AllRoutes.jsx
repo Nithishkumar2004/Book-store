@@ -2,8 +2,8 @@ import React from 'react';
 import { Route, Routes } from 'react-router-dom';
 import {
   Home, CreateBooks, SignUp, Login, Cart, UserOrders, Profile, 
-  BookDetails, Feedback, InventoryManagement, SellerOrders, Dashboard, UserManagement, 
-  BookManagement, SellerManagement, OrderManagement, PurchasePage,Notfound, Landingpage,SellerProfile
+  BookDetails, InventoryManagement, SellerOrders, Dashboard, UserManagement, 
+  BookManagement, SellerManagement, OrderManagement, PurchasePage,Notfound, Landingpage,SellerProfile,SellerHome
 } from '../pages';
 import ProtectedRoute from './ProtectedRoute';
 
@@ -25,11 +25,10 @@ const AllRoutes = () => {
       <Route path="/cart" element={protectedRoute(<Cart />, ['user'])} />
       <Route path="/orders" element={protectedRoute(<UserOrders/>, ['user'])} />
       <Route path="/user/profile" element={protectedRoute(<Profile />, ['user', 'admin'])} />
-      <Route path="/feedback" element={protectedRoute(<Feedback />, ['user', 'admin'])} />
       <Route path="/purchase/:id" element={protectedRoute(<PurchasePage />, ['user', 'admin'])} />
 
       {/* Seller Routes */}
-      <Route path="/seller/home" element={protectedRoute(<Home />, ['seller', 'admin'])} />
+      <Route path="/seller/home" element={protectedRoute(<SellerHome />, ['seller', 'admin'])} />
 
       <Route path="/seller/profile" element={protectedRoute(<SellerProfile />, ['seller', 'admin'])} />
       

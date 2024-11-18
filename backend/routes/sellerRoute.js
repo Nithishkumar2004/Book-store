@@ -141,6 +141,63 @@ router.get('/profile', async (req, res) => {
   }
 });
 
+
+// Fetch Seller  Inventory Route
+router.get('/inventory', async (req, res) => {
+  try {
+    const token = req.headers['x-auth-token'];
+
+    if (!token) {
+      return sendErrorResponse(res, 401, 'Access denied');
+    }
+
+    // Decode the token to get seller information
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Find the seller by their ID and retrieve the inventory
+    const seller = await Seller.findById(decoded.sellerId).select('inventory');
+
+    if (!seller) {
+      return sendErrorResponse(res, 404, 'Seller not found');
+    }
+
+    // Fetch details of books using the bookId from inventory
+    const bookDetailsPromises = seller.inventory.map(async (item) => {
+      const book = await Book.findById(item.bookId).select('bookName authorName price bookImage');  // Selecting essential fields
+      if (!book) {
+        return null;  // Handle case where book doesn't exist
+      }
+      return {
+        bookId: book._id,
+        bookName: book.bookName,
+        authorName: book.authorName,
+        price: book.price,
+        bookImage: book.bookImage,  // Include book image
+        count: item.count
+      };
+    });
+
+    // Wait for all book details to be fetched
+    const books = await Promise.all(bookDetailsPromises);
+
+    // Filter out any null values in case some books weren't found
+    const validBooks = books.filter(book => book !== null);
+
+    // Return the seller's inventory along with book details
+    res.status(200).json({
+      success: true,
+      seller: {
+        _id: seller._id,
+        inventory: validBooks
+      }
+    });
+  } catch (error) {
+    console.error('Error fetching seller profile and inventory:', error);
+    sendErrorResponse(res, 500, 'Server error');
+  }
+});
+
+
 // Update Seller Profile Route
 router.put('/profile', async (req, res) => {
   const { name, email, phone, companyName, registrationNumber, address, pincode } = req.body;
@@ -178,12 +235,56 @@ router.put('/profile', async (req, res) => {
   }
 });
 
+// Route to fetch counts for the current seller
+router.get('/counts', async (req, res) => {
+  try {
+    // Extract token from Authorization header
+    const authToken = req.headers.authorization;
 
+    if (!authToken) {
+      return sendErrorResponse(res, 400, 'Authorization token is required');
+    }
+
+    // Extract token from 'Bearer <token>'
+    const token = authToken.split(' ')[1];
+
+    // Decode and verify the token
+    const decoded = jwt.verify(token, JWT_SECRET); // Replace with your actual secret key
+    const sellerId = decoded.sellerId; // Extract sellerId from decoded token
+    
+    // Fetch the count of books, users, and orders for the current seller
+    const [sellerBookCount, sellerUserCount, sellerOrderCount] = await Promise.all([
+      Book.countDocuments({ sellerId: sellerId }), // Fetch book count for the seller
+      User.countDocuments(), // Fetch user count for the seller
+      Order.countDocuments({ sellerId: sellerId }), // Fetch order count for the seller
+    ]);
+
+    // Send the response with current seller's book, user, and order counts
+    res.status(200).json({
+      success: true,
+      sellerBookCount,  // Seller's book count
+      sellerUserCount,  // Seller's user count
+      sellerOrderCount, // Seller's order count
+    });
+
+  } catch (error) {
+    console.error('Error fetching counts:', error);
+    
+    // Handle errors: If token is invalid or expired, or any other server error
+    if (error.name === 'JsonWebTokenError') {
+      return sendErrorResponse(res, 401, 'Invalid or expired token');
+    }
+    
+    // General server error
+    return sendErrorResponse(res, 500, 'Server error');
+  }
+});
 
 
 router.put('/update-inventory/:bookId', async (req, res) => {
   const { bookId } = req.params;
   const authToken = req.headers['x-auth-token'];
+  
 
   // Check if the authorization token is provided
   if (!authToken) {
@@ -238,47 +339,26 @@ router.get('/orders', async (req, res) => {
     // Verify the token
     const decoded = jwt.verify(token, JWT_SECRET);
     const sellerId = decoded.sellerId;  // Extract sellerId from decoded token
-
+    
     // Find the seller from the database
-    const seller = await Seller.findById(sellerId);
+    const seller = await Seller.findById(sellerId).select('-password');
     if (!seller) {
       return res.status(404).json({ message: 'Seller not found' });
     }
+    
 
     // Fetch orders where the sellerId is in the sellerIds array (assuming orders belong to one seller only)
-    const orders = await Order.find({ sellerIds: sellerId });
-
+    const orders = await Order.find({ sellerId: sellerId });
+    const books = await Book.find({sellerId:sellerId});
     // If no orders found
     if (!orders || orders.length === 0) {
       return res.status(404).json({ message: 'No orders found for this seller' });
     }
+    
 
-    // Manually fetch book, seller, and user (buyer) details for each order
-    const ordersWithDetails = await Promise.all(orders.map(async (order) => {
-      // Fetch buyer (user) details
-      const buyer = await User.findById(order.buyerId);  // Assuming order has buyerId field
-      const orderItemsWithBookDetails = await Promise.all(order.items.map(async (item) => {
-        // Fetch book details by ID
-        const book = await Book.findById(item.bookId);
-        return {
-          ...item,
-          bookDetails: book ? {
-            name: book.name,
-            price: book.price,
-            image: book.image || '',  // Assuming book has an 'image' field
-          } : {},
-        };
-      }));
-
-      return {
-        ...order.toObject(),
-        buyerDetails: buyer ? { name: buyer.name, email: buyer.email } : {}, // Buyer details
-        items: orderItemsWithBookDetails,
-      };
-    }));
 
     // Return the orders with detailed information
-    res.status(200).json({ orders: ordersWithDetails });
+    res.status(200).json({ orders: orders,seller:seller,books:books});
   } catch (error) {
     console.error('Error fetching seller orders:', error);
     res.status(500).json({ message: 'An error occurred while fetching the seller orders', error: error.message });
