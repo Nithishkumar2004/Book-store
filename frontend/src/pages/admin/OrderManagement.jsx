@@ -34,7 +34,8 @@ const OrderManagement = () => {
       [orderId]: !prev[orderId],  // Toggle the expanded state of the specific order
     }));
   };
-
+  console.log(orders);
+  
   if (loading) {
     return <div>Loading orders...</div>;  // Show loading state
   }
@@ -54,7 +55,9 @@ const OrderManagement = () => {
             <thead className="bg-gray-100">
               <tr>
                 <th className="py-2 px-4 border-b text-left">Order ID</th>
-                <th className="py-2 px-4 border-b text-left">Status</th>
+                <th className="py-2 px-4 border-b text-left">Buyer</th>
+
+                <th className="py-2 px-4 border-b text-left">Seller</th>
                 <th className="py-2 px-4 border-b text-left">Total Amount</th>
                 <th className="py-2 px-4 border-b text-left">Shipping Address</th>
                 <th className="py-2 px-4 border-b text-left">Actions</th>
@@ -62,10 +65,14 @@ const OrderManagement = () => {
             </thead>
             <tbody>
               {orders.map((order) => (
+             
+                
                 <React.Fragment key={order._id}>
                   <tr className="hover:bg-gray-50">
                     <td className="py-2 px-4 border-b">{order._id}</td>
-                    <td className="py-2 px-4 border-b">{order.status}</td>
+                    <td className="py-2 px-4 border-b">{order.buyerId.name}</td>
+                    <td className="py-2 px-4 border-b">{order.sellerId[0].name}</td>
+
                     <td className="py-2 px-4 border-b">₹{order.totalAmount}</td>
                     <td className="py-2 px-4 border-b">{order.shippingAddress}</td>
                     <td className="py-2 px-4 border-b">
