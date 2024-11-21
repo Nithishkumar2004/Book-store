@@ -199,19 +199,6 @@ router.put('/profile', async (req, res) => {
   }
 });
 
-// Logout Route for User
-router.post('/logout', (req, res) => {
-  try {
-    // Clear the JWT cookie
-    res.clearCookie('authToken');
-
-    res.status(200).json({ success: true, message: 'Logged out successfully' });
-  } catch (error) {
-    console.error('Error logging out:', error);
-    sendErrorResponse(res, 500, 'Server error');
-  }
-});
-
 // Backend route for adding to cart
 router.post('/addcart', async (req, res) => {
   try {
