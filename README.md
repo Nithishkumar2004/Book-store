@@ -63,10 +63,14 @@ This project is developed as part of the Naan Mudhalvan Program. The course is M
 
 ### Environment Variables
 Create a `.env` file in the backend directory with:
-```bash
-MONGODB_URI=your_mongodb_connection_string
-PORT=3000
-# Add any other required environment variables
+```bashPORT=3000
+mongoDBURL='mongodb+srv://nithishcse2021:qAcv0YyZNkP18MgO@cluster0.z7clm.mongodb.net/Bookstore?retryWrites=true&w=majority&appName=Cluster0'
+REACT_APP_ENDPOINT='http://localhost:3000'
+JWT_SECRET='b6188365be95d62f6dc082f1844e4f3eb862bc8f41438bf5c2c13d2aaa7776e0b251af76795211f34779860d5d5a2c3288590e0921695d51510c13c814a37830fded89ecbc9941f3c16e41e90fd889f1e009a8d31352325947eb8cf43db7905626027664b586b9dc3586a0873645232770821185a2833cdd350a31701c5944764734e4b6cf1daf4b05286664c8f44c45c90c0d24db43292229b3d20807d43c3dacc7d608877ede662d15f16b9406b3e5eb22a3a5574df6a39900a9df4141831b0a3ad42ee9431db12c0236777d9c37ca4c0f732446ca898496ca94360eadc8d065dd5fb7792111ed7c20137c7112698c11928d253819989fa4e77750156b8ff7'
+JWT_EXPIRY=3600000  # Optional: Set the expiry time for JWT
+CLOUDINARY_CLOUD_NAME='dvbgs8fy1'
+CLOUDINARY_API_KEY='148237359281976'
+CLOUDINARY_API_SECRET='HN_KnZyL-oaKeyBSlF3BVoEWbOU'
 ```
 
 ### Setup Instructions
